@@ -1,5 +1,5 @@
 const BasePolkadot = require('../basePolkadot')
-const BrowserIpfs = require('../Utils/BrowserIpfs')
+const BrowserIpfs = require('../../../Utils/BrowserIpfs')
 class AfloatApi extends BasePolkadot {
   constructor (polkadotApi, notify, hcd, projectId, secretId) {
     super(polkadotApi, 'afloatApi', notify)
@@ -7,6 +7,8 @@ class AfloatApi extends BasePolkadot {
     // this.fruniques = fruniques
     // this.uniques = uniques
     this.BrowserIpfs = new BrowserIpfs(projectId, secretId)
+    this.prefixIPFS = 'IPFS:'
+    this.prefixHCD = 'HCD:'
   }
 
   /**
@@ -21,26 +23,31 @@ class AfloatApi extends BasePolkadot {
    * @returns {Object}
    */
   async createAsset ({ collectionId, assetId, uniquesPublicAttributes, plaintextSaveToIPFS, encryptoThenSaveToIPFS }, subTriger) {
-    // const collectionID = collectionId || this.getLastClassId()
-    // const assetID = assetId || 0
-
-    const attributes = []
-    const uniquesPublic = this.getPlainAttributes(uniquesPublicAttributes)
-    attributes.push(uniquesPublic)
+    let attributes
+    const collectionID = collectionId || this.getLastClassId()
+    const assetID = assetId || 0
+    console.log({ collectionID, assetID })
+    const hasProperties = Object.entries(uniquesPublicAttributes).length > 0
+    if (hasProperties) {
+      attributes = this.getPlainAttributes(uniquesPublicAttributes)
+    }
 
     // Save to IPFS
     const { data: dataToIPFS, files: filesToIPFS } = plaintextSaveToIPFS
     if (dataToIPFS || filesToIPFS) {
-      const savedInIPFS = this.saveToIPFS({ ...dataToIPFS, ...filesToIPFS })
-      console.log(savedInIPFS)
+      const savedInIPFS = await this.saveToIPFS({ ...dataToIPFS, ...filesToIPFS }, this.prefixIPFS)
+      attributes.push(...savedInIPFS)
     }
 
     // Encrypt save to IPFS
     const { data: dataToEncrypt, files: filesToEncrypt } = encryptoThenSaveToIPFS
     if (dataToEncrypt || filesToEncrypt) {
-      const savedEncrypted = this.saveToHCD({ ...dataToEncrypt, ...filesToEncrypt })
-      console.log(savedEncrypted)
+      const savedEncrypted = await this.saveToHCD({ ...dataToEncrypt, ...filesToEncrypt }, this.prefixHCD)
+      attributes.push(...savedEncrypted)
     }
+
+    console.log('Attributes to send', attributes)
+    // invoke the extrinsic method
   }
 
   /**
@@ -67,26 +74,43 @@ class AfloatApi extends BasePolkadot {
     return lastClassId
   }
 
-  getPlainAttributes (attributes, isSavedInIPFS) {
-    const attributesFormatted = []
+  getPlainAttributes (attributes) {
+    console.log(attributes)
+    const attributesArray = []
     for (const [key, value] of Object.entries(attributes)) {
-      attributesFormatted.push([key, value.toString()])
+      attributesArray.push([key, value.toString()])
     }
-    return attributesFormatted
+    return attributesArray
   }
 
-  async saveToIPFS (elements) {
+  async saveToIPFS (elements, prefix) {
+    console.log('elements IPFS', elements)
     try {
       const attributes = []
       for (const [key, value] of Object.entries(elements)) {
-        const prefix = 'IPFS:'
-        const cid = await this.BrowserIpfs.store(value)
+        // const cid = await this.BrowserIpfs.store(value)
+        const cid = '/cid/' + value
         const cidWithPrefix = prefix + cid
-        attributes.push(key, cidWithPrefix)
+        attributes.push([key, cidWithPrefix])
       }
       return attributes
     } catch (error) {
       throw new Error('Error saving to IPFS: ' + error.message)
+    }
+  }
+
+  async saveToHCD (elements, prefix) {
+    try {
+      const attributes = []
+      for (const [key, value] of Object.entries(elements)) {
+        // const cid = await this.BrowserIpfs.store(value)
+        const cid = '/HCD/' + value
+        const cidWithPrefix = prefix + cid
+        attributes.push([key, cidWithPrefix])
+      }
+      return attributes
+    } catch (error) {
+      throw new Error('Error saving to HCD: ' + error.message)
     }
   }
 }

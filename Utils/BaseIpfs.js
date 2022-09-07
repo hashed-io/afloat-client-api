@@ -1,5 +1,5 @@
 // import { create } from 'ipfs-http-client'
-const create = require('ipfs-http-client').create
+// const create = require('ipfs-http-client').create
 // import all from 'it-all'
 const all = require('it-all')
 // import { concat as uint8ArrayConcat } from 'uint8arrays/concat'
@@ -13,15 +13,16 @@ class BaseIpfs {
     // it-all
     // ipfs-http-client
     // uint8arrays
-    const auth = 'Basic ' + Buffer.from(projectId + ':' + projectSecret).toString('base64')
-    this.client = create({
-      host: process.env.IPFS_URL,
-      port: 5001,
-      protocol: 'https',
-      headers: {
-        authorization: auth
-      }
-    })
+    console.log('lorem')
+    // const auth = 'Basic ' + Buffer.from(projectId + ':' + projectSecret).toString('base64')
+    // this.client = create({
+    //   host: process.env.IPFS_URL,
+    //   port: 5001,
+    //   protocol: 'https',
+    //   headers: {
+    //     authorization: auth
+    //   }
+    // })
   }
 
   async store (payload) {
