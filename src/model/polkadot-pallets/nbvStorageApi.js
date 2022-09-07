@@ -1,8 +1,9 @@
 const BasePolkadot = require('../basePolkadot')
-
+const create = require('ipfs-http-client').create
 class NbvStorageApi extends BasePolkadot {
   constructor (polkadotApi, notify) {
     super(polkadotApi, 'nbvStorage', notify)
+    this.create = create
   }
 
   /**
