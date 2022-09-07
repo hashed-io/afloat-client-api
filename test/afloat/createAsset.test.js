@@ -1,3 +1,4 @@
+global.window = { addEventListener () {} }
 const PolkadotApi = require('../../src/model/polkadotApi')
 const { AfloatApi } = require('../../src/model/polkadot-pallets')
 

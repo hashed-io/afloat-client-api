@@ -8,8 +8,8 @@ const { TextDecoder, TextEncoder } = require('util')
 module.exports = {
   globals: {
     TextDecoder,
-    TextEncoder,
-    window: { addEventListener () {} }
+    TextEncoder
+    // window: { addEventListener () { } }
     // Agent
   },
   transform: {
