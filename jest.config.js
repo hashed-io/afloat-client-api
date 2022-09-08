@@ -8,7 +8,7 @@ module.exports = {
   globals: {
     TextDecoder,
     TextEncoder
-    // window: { addEventListener () {} }
+    // window: { addEventListener () { } }
     // Agent
   },
   transform: {
