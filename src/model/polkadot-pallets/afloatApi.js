@@ -1,14 +1,27 @@
 const BasePolkadot = require('../basePolkadot')
 const BrowserIpfs = require('../../../Utils/BrowserIpfs')
+const UniquesApi = require('../polkadot-pallets/uniquesApi')
+const FruniquesApi = require('../polkadot-pallets/fruniquesApi')
 class AfloatApi extends BasePolkadot {
-  constructor (polkadotApi, notify, hcd, projectId, secretId) {
-    super(polkadotApi, 'afloatApi', notify)
+  constructor ({ projectId, secretId, IPFS_URL, notify, hcd }) {
+    console.log('construct', projectId, secretId, IPFS_URL, notify, hcd)
+    const polkadotApi = hcd.getPolkadotApi()
+    super(polkadotApi, 'fruniques', notify)
     this.hcd = hcd
-    // this.fruniques = fruniques
-    // this.uniques = uniques
-    this.BrowserIpfs = new BrowserIpfs(projectId, secretId)
+    this.fruniquesApi = new FruniquesApi({ polkadotApi })
+    this.uniquesApi = new UniquesApi({ polkadotApi })
+
+    this.BrowserIpfs = new BrowserIpfs(projectId, secretId, IPFS_URL)
     this.prefixIPFS = 'IPFS:'
     this.prefixHCD = 'HCD:'
+  }
+
+  /**
+   * @description Set signer for external wallet
+   * @param {String} signer Polkadot address
+   */
+  setSigner (signer) {
+    this._signer = signer
   }
 
   /**
@@ -24,7 +37,7 @@ class AfloatApi extends BasePolkadot {
    */
   async createAsset ({ collectionId, assetId, uniquesPublicAttributes, plaintextSaveToIPFS, encryptoThenSaveToIPFS }, subTriger) {
     let attributes
-    const collectionID = collectionId || this.getLastClassId()
+    const collectionID = collectionId || await this.getLastClassId()
     const assetID = assetId || 0
     console.log({ collectionID, assetID })
     const hasProperties = Object.entries(uniquesPublicAttributes).length > 0
@@ -48,6 +61,11 @@ class AfloatApi extends BasePolkadot {
 
     console.log('Attributes to send', attributes)
     // invoke the extrinsic method
+    return this.fruniquesApi.callTx({
+      extrinsicName: 'createWithAttributes',
+      signer: this._signer,
+      params: attributes
+    })
   }
 
   /**
@@ -60,12 +78,15 @@ class AfloatApi extends BasePolkadot {
    * @returns {Object}
    */
   async getAllAssetsInCollection ({ collectionId, startKey, pageSize }, subTrigger) {
-
+    // Get all assets
+    const assets = await this.uniquesApi.getAllAssets()
+    // Get the
+    return assets
   }
 
   // Helper functions
   async getLastClassId () {
-    let classesIds = await this.exEntriesQuery('class', [])
+    let classesIds = await this.uniquesApi.exEntriesQuery('class', [])
     classesIds = this.mapEntries(classesIds)
     const mapClasses = classesIds.map(v => {
       return parseInt(v.id)
@@ -84,18 +105,16 @@ class AfloatApi extends BasePolkadot {
   }
 
   async saveToIPFS (elements, prefix) {
-    console.log('elements IPFS', elements)
     try {
       const attributes = []
       for (const [key, value] of Object.entries(elements)) {
-        // const cid = await this.BrowserIpfs.store(value)
-        const cid = '/cid/' + value
+        const cid = await this.BrowserIpfs.store(value)
         const cidWithPrefix = prefix + cid
         attributes.push([key, cidWithPrefix])
       }
       return attributes
     } catch (error) {
-      throw new Error('Error saving to IPFS: ' + error.message)
+      console.error('An error occured while trying to upload to IPFS: ', error || error.message)
     }
   }
 
@@ -103,8 +122,9 @@ class AfloatApi extends BasePolkadot {
     try {
       const attributes = []
       for (const [key, value] of Object.entries(elements)) {
-        // const cid = await this.BrowserIpfs.store(value)
-        const cid = '/HCD/' + value
+        const cid = await this.hcd.addOwnedData({ name: key, description: key, payload: value })
+        // const cid = '/HCD/' + value
+        console.log('CID HCD: ', cid)
         const cidWithPrefix = prefix + cid
         attributes.push([key, cidWithPrefix])
       }

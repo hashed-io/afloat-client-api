@@ -4,12 +4,11 @@
  */
 const { TextDecoder, TextEncoder } = require('util')
 // const { Agent } = require('https')
-
 module.exports = {
   globals: {
     TextDecoder,
-    TextEncoder,
-    window: { addEventListener () {} }
+    TextEncoder
+    // window: { addEventListener () {} }
     // Agent
   },
   transform: {

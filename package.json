@@ -1,5 +1,5 @@
 {
-  "name": "@jmgayosso/nbv-client-api",
+  "name": "@jmgayosso/afloat-client-api",
   "version": "0.0.1",
   "description": "Client API that handles calls and queries to interact with NBV pallet",
   "main": "src/index.js",

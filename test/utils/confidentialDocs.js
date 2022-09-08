@@ -59,7 +59,7 @@ class ConfidentialDocs {
     const vaultAuthProvider = new GoogleVaultAuthProvider({
       authName: ssoProvider,
       userId: ssoUserId,
-      email: email,
+      email,
       googleDrive
     })
 

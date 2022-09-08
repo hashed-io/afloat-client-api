@@ -2,15 +2,15 @@
 const BaseIpfs = require('./BaseIpfs')
 class BrowserIpfs extends BaseIpfs {
   // eslint-disable-next-line no-useless-constructor
-  constructor (...args) {
-    super(...args)
+  constructor (projectId, projectSecret, IPFS_URL) {
+    super(projectId, projectSecret, IPFS_URL)
   }
 
   async store (payload) {
-    if (payload instanceof File) {
-      const cid = await this.addFile(payload)
-      return this.getTypeCid(cid, payload.type)
-    }
+    // if (payload instanceof File) {
+    //   const cid = await this.addFile(payload)
+    //   return this.getTypeCid(cid, payload.type)
+    // }
     return super.store(payload)
   }
 
