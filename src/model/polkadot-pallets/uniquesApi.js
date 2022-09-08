@@ -125,6 +125,9 @@ class UniquesApi extends BasePolkadot {
       })
       return attributeData
     })
+    // for (const unique of uniquesList) {
+    //   // const value = unique?.value
+    // }
     return uniquesList
   }
 }

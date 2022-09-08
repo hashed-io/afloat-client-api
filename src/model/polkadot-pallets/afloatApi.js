@@ -121,8 +121,9 @@ class AfloatApi extends BasePolkadot {
   async saveToHCD (elements, prefix) {
     try {
       const attributes = []
-      for (const [key, value] of Object.entries(elements)) {
-        const cid = await this.hcd.addOwnedData({ name: key, description: key, payload: value })
+      console.log({ hcd: this.hcd, elements })
+      for await (const [key, value] of Object.entries(elements)) {
+        const cid = await this.hcd.addOwnedData({ name: key, description: key, payload: value }).cid
         // const cid = '/HCD/' + value
         console.log('CID HCD: ', cid)
         const cidWithPrefix = prefix + cid
@@ -130,7 +131,7 @@ class AfloatApi extends BasePolkadot {
       }
       return attributes
     } catch (error) {
-      throw new Error('Error saving to HCD: ' + error.message)
+      throw new Error('Error saving to HCD: ' + error || error.message)
     }
   }
 }
