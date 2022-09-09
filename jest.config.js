@@ -4,20 +4,19 @@
  */
 const { TextDecoder, TextEncoder } = require('util')
 // const { Agent } = require('https')
-
 module.exports = {
   globals: {
-    TextDecoder: TextDecoder,
-    TextEncoder: TextEncoder,
-    window: { addEventListener () {} }
+    TextDecoder,
+    TextEncoder
+    // window: { addEventListener () { } }
     // Agent
   },
   transform: {
-    'node_modules/(data-uri-to-buffer|node-fetch|uuid|@ipld|fetch-blob|formdata-polyfill|uint8arrays|@smontero|ipfs-http-client|ipfs-core-utils|multiformats|util|cborg|ipfs-unixfs)/.+\\.(j|t)sx?$': 'babel-jest'
+    'node_modules/(data-uri-to-buffer|node-fetch|uuid|@ipld|fetch-blob|formdata-polyfill|uint8arrays|@smontero|ipfs-core-utils|multiformats|util|cborg|ipfs-unixfs)/.+\\.(j|t)sx?$': 'babel-jest'
     // '/\\.[jt]sx?$/': 'babel-jest'
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(data-uri-to-buffer|node-fetch|uuid|@ipld|fetch-blob|formdata-polyfill|uint8arrays|@smontero|ipfs-http-client|ipfs-core-utils|multiformats|util|cborg|ipfs-unixfs)/.*)'
+    'node_modules/(?!(data-uri-to-buffer|node-fetch|uuid|@ipld|fetch-blob|formdata-polyfill|uint8arrays|@smontero|ipfs-core-utils|multiformats|util|cborg|ipfs-unixfs)/.*)'
   ],
   // transform: {
   //   '\\.js$': './node_modules/babel-jest'
@@ -52,7 +51,7 @@ module.exports = {
   // collectCoverageFrom: undefined,
 
   // The directory where Jest should output its coverage files
-  coverageDirectory: 'coverage',
+  coverageDirectory: 'coverage'
 
   // An array of regexp pattern strings used to skip coverage collection
   // coveragePathIgnorePatterns: [
@@ -118,7 +117,6 @@ module.exports = {
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   // moduleNameMapper: {},
-
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
   // modulePathIgnorePatterns: [],
 

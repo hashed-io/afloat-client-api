@@ -1,5 +1,4 @@
 const BasePolkadot = require('../basePolkadot')
-
 class NbvStorageApi extends BasePolkadot {
   constructor (polkadotApi, notify) {
     super(polkadotApi, 'nbvStorage', notify)
