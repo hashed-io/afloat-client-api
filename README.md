@@ -6,7 +6,7 @@ To install the afloat-client-api, run the following command:
 
 `npm i --save @jmgayosso/afloat-client`
 or
-`yarn add --save @jmgayosso/afloat-client`
+`yarn add @jmgayosso/afloat-client`
 
 To connect to 'hashed chain' through Hashed Confidential Docs we must import HCD package [hashed-confidential-docs-client](https://github.com/hashed-io/hashed-confidential-docs-client-api) that handles the connection and provides methods to sign tx, login, requestUsers from polkadotJS and sign and verify messages.
 
