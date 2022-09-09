@@ -92,7 +92,11 @@ class AfloatApi extends BasePolkadot {
         const isIpfs = value.includes(this.prefixIPFS)
         if (isIpfs) {
           const splitted = value.split(this.prefixIPFS)
-          const response = await this.BrowserIpfs.retrieve(splitted[1])
+          let response
+          const [cid] = splitted[1].split(':')
+          if (cid !== 'undefined') {
+            response = await this.BrowserIpfs.retrieve(splitted[1])
+          }
           value = response
           plaintextSaveToIPFS[attribute] = value
         } else {
@@ -128,8 +132,10 @@ class AfloatApi extends BasePolkadot {
 
   // get only text and file use CID
   async getFromIPFS (cid) {
-    const elementRetrieved = await this.BrowserIpfs.retrieve(cid)
-    console.log('Get from IPFS', elementRetrieved)
+    let elementRetrieved
+    if (cid) {
+      elementRetrieved = await this.BrowserIpfs.retrieve(cid)
+    }
     return elementRetrieved
   }
 
@@ -158,6 +164,9 @@ class AfloatApi extends BasePolkadot {
       for await (const [key, value] of Object.entries(elements)) {
         const cid = await this.BrowserIpfs.store(value)
         const cidWithPrefix = prefix + cid
+        if (!cid) {
+          throw new Error('An error occurred while trying to store on IPFS')
+        }
         attributes.push([key, cidWithPrefix])
       }
       return attributes
