@@ -26,12 +26,13 @@ class AfloatApi extends BasePolkadot {
    * @param {u64} collectionId Collection ID used in the uniques pallet; represents a group of Uniques
    * @param {u64} assetId [optional] Asset ID used in the uniques pallet; represents a single asset. If not provided, the next available unique ID will be automatically selected.
    * @param {Object} uniquesPublicAttributes mapping of key/value pairs to be set in the public metadata in the uniques pallet
-   * @param {Object} plaintextSaveToIPFS payload and/or files to be saved to IPFS, and the resulting CIDs are added to the uniquesPublicMetadata, anchoring the data to the NFT.
-   * @param {Object} encryptThenSaveToIPFS payload and/or files to be saved encrypted, saved to IPFS, and the resulting CIDs are added to the uniquesPublicMetadata, anchoring the data to the NFT. [CID]
+   * @param {Object} saveToIPFS payload and/or files to be saved to IPFS, and the resulting CIDs are added to the uniquesPublicMetadata, anchoring the data to the NFT.
+   * @param {Object} cidFromHCD cid got from the ConfidentialDocs API [https://github.com/hashed-io/hashed-confidential-docs-client-api]
    * @param {Function} subTrigger Function to trigger when subscrsption detect changes
    * @returns {Object}
    */
-  async createAsset ({ collectionId, assetId, uniquesPublicAttributes, plaintextSaveToIPFS, encryptoThenSaveToIPFS, admin }, subTriger) {
+  async createAsset ({ collectionId, assetId, uniquesPublicAttributes, saveToIPFS, cidFromHCD, admin }, subTriger) {
+    console.log({ collectionId, assetId, uniquesPublicAttributes, saveToIPFS, cidFromHCD, admin })
     let attributes
     const collectionID = collectionId || await this.getLastClassId() + 1
     const assetID = assetId || 0
@@ -42,14 +43,14 @@ class AfloatApi extends BasePolkadot {
     }
 
     // Save to IPFS
-    const { data: dataToIPFS, files: filesToIPFS } = plaintextSaveToIPFS
+    const { data: dataToIPFS, files: filesToIPFS } = saveToIPFS
     if (dataToIPFS || filesToIPFS) {
       const savedInIPFS = await this.saveToIPFS({ ...dataToIPFS, ...filesToIPFS }, this.prefixIPFS)
       attributes.push(...savedInIPFS)
     }
 
     // Encrypt save to IPFS
-    const { data: dataToEncrypt, files: filesToEncrypt } = encryptoThenSaveToIPFS
+    const { data: dataToEncrypt, files: filesToEncrypt } = cidFromHCD
     if (dataToEncrypt || filesToEncrypt) {
       const savedEncrypted = await this.getPlainAttributes({ ...dataToEncrypt, ...filesToEncrypt })
       attributes.push(...savedEncrypted)
@@ -104,8 +105,12 @@ class AfloatApi extends BasePolkadot {
     return newAssetFormat
   }
 
-  async getAsset ({ collectionId }) {
-    // const asset = await this.uniquesApi.getAsset({ classId: collectionId, instanceId: 0 })
+  async getAsset ({ collectionId, instanceId = 0 }) {
+    // Get the collection object
+    // const asset = await this.uniquesApi.getAsset({ classId: collectionId, instanceId })
+
+    // Get information from the IPFS service
+
   }
 
   // get only text and file use CID
