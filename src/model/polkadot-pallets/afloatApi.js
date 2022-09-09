@@ -3,16 +3,13 @@ const BrowserIpfs = require('../../../Utils/BrowserIpfs')
 const UniquesApi = require('../polkadot-pallets/uniquesApi')
 const FruniquesApi = require('../polkadot-pallets/fruniquesApi')
 class AfloatApi extends BasePolkadot {
-  constructor ({ projectId, secretId, IPFS_URL, notify, hcd }) {
-    const polkadotApi = hcd.getPolkadotApi()
+  constructor ({ polkadotApi, projectId, secretId, IPFS_URL, notify }) {
     super(polkadotApi, 'fruniques', notify)
-    this.hcd = hcd
     this.fruniquesApi = new FruniquesApi({ polkadotApi, notify })
     this.uniquesApi = new UniquesApi({ polkadotApi, notify })
 
     this.BrowserIpfs = new BrowserIpfs(projectId, secretId, IPFS_URL)
     this.prefixIPFS = 'IPFS:'
-    this.prefixHCD = 'HCD:'
   }
 
   /**
@@ -54,7 +51,7 @@ class AfloatApi extends BasePolkadot {
     // Encrypt save to IPFS
     const { data: dataToEncrypt, files: filesToEncrypt } = encryptoThenSaveToIPFS
     if (dataToEncrypt || filesToEncrypt) {
-      const savedEncrypted = await this.saveToHCD({ ...dataToEncrypt, ...filesToEncrypt }, this.prefixHCD)
+      const savedEncrypted = await this.getPlainAttributes({ ...dataToEncrypt, ...filesToEncrypt })
       attributes.push(...savedEncrypted)
     }
 
@@ -92,17 +89,11 @@ class AfloatApi extends BasePolkadot {
       for (const Attribute of attributes) {
         let { attribute, value } = Attribute
         const isIpfs = value.includes(this.prefixIPFS)
-        const isHcd = value.includes(this.prefixHCD)
         if (isIpfs) {
           const splitted = value.split(this.prefixIPFS)
           const cid = await this.BrowserIpfs.retrieve(splitted[1])
           value = cid
           plaintextSaveToIPFS[attribute] = value
-        } else if (isHcd) {
-          const splitted = value.split(this.prefixHCD)
-          const cid = await this.hcd.viewOwnedDataByCID(splitted[1])
-          value = cid
-          encryptedData[attribute] = value
         } else {
           publicAttributes[attribute] = value
         }
@@ -119,8 +110,9 @@ class AfloatApi extends BasePolkadot {
 
   // get only text and file use CID
   // if extension is json -> texplain
-  getFromIPFS (cid) {
-
+  async getFromIPFS (cid) {
+    const elementRetrieved = await this.BrowserIpfs.store(cid)
+    return elementRetrieved
   }
 
   // Helper functions
@@ -153,21 +145,6 @@ class AfloatApi extends BasePolkadot {
       return attributes
     } catch (error) {
       console.error('An error occured while trying to upload to IPFS: ', error || error.message)
-    }
-  }
-
-  async saveToHCD (elements, prefix) {
-    try {
-      const attributes = []
-      for await (const [key, value] of Object.entries(elements)) {
-        const cid = await this.hcd.addOwnedData({ name: key, description: key, payload: value }).cid
-        // const cid = '/HCD/' + value
-        const cidWithPrefix = prefix + cid
-        attributes.push([key, cidWithPrefix])
-      }
-      return attributes
-    } catch (error) {
-      throw new Error('Error saving to HCD: ' + error || error.message)
     }
   }
 }
