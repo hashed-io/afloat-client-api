@@ -80,9 +80,6 @@ class AfloatApi extends BasePolkadot {
     // Get all assets
     const assets = await this.uniquesApi.getAllAssets({ startKey, pageSize })
     // Get the data from services
-    const publicAttributes = {}
-    const encryptedData = {}
-    const plaintextSaveToIPFS = {}
     const newAssetFormat = []
     for (const asset of assets) {
       const { id, data, attributes } = asset
@@ -90,6 +87,9 @@ class AfloatApi extends BasePolkadot {
         assetId: id,
         data
       }
+      const publicAttributes = {}
+      const encryptedData = {}
+      const plaintextSaveToIPFS = {}
       for (const Attribute of attributes) {
         let { attribute, value } = Attribute
         const isIpfs = value.includes(this.prefixIPFS)
