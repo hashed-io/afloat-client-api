@@ -2,12 +2,11 @@
 const BasePolkadot = require('../basePolkadot')
 class UniquesApi extends BasePolkadot {
   constructor ({ polkadotApi, notify }) {
-    console.log('construc UNiques', polkadotApi)
     super(polkadotApi, 'uniques', notify)
   }
 
-  async getAllAssets () {
-    let assets = await this.exEntriesQuery('class', [])
+  async getAllAssets ({ startKey, pageSize }) {
+    let assets = await this.exEntriesQuery('class', [], { startKey, pageSize })
     assets = this.mapEntries(assets)
     const assetsIds = []
     const assetsMapped = assets.map((v) => {
@@ -45,7 +44,7 @@ class UniquesApi extends BasePolkadot {
   // Queries
   async getAsset ({ classId, instanceId }) {
     const allIds = await this.exEntriesQuery('attribute', [classId, instanceId])
-    console.log('allIds', allIds)
+    console.log(allIds)
     const map = this.mapEntries(allIds)
     // Example
     //   {
@@ -61,6 +60,7 @@ class UniquesApi extends BasePolkadot {
     //     ]
     // }
     const response = map.map(v => {
+      console.log(v)
       return {
         label: v.id[2],
         value: v.value[0]
@@ -71,14 +71,12 @@ class UniquesApi extends BasePolkadot {
 
   async getUniquesByAddress ({ address }) {
     const allIds = await this.exEntriesQuery('classAccount', [address])
-    console.log('allIds', allIds)
     const map = this.mapEntries(allIds)
     const classesIdArray = map.map(v => {
       return v.id[1]
     })
     const classData = await this.getClassInfoByClassesId({ classesIds: classesIdArray })
     const classAttributes = await this.getAttributesByClassesId({ classesIds: classesIdArray })
-    console.log('classAttributes', classAttributes)
     const uniquesList = classAttributes.map((attributes, index) => {
       classData[index].attributes = attributes
       return {
@@ -95,7 +93,6 @@ class UniquesApi extends BasePolkadot {
      * @returns Array class data in array
      */
   async getClassInfoByClassesId ({ classesIds }) {
-    console.log('classesIds', classesIds)
     const classData = await this.exMultiQuery('class', classesIds)
     const classDataReadable = classData.map((v, index) => {
       return {
@@ -125,9 +122,6 @@ class UniquesApi extends BasePolkadot {
       })
       return attributeData
     })
-    // for (const unique of uniquesList) {
-    //   // const value = unique?.value
-    // }
     return uniquesList
   }
 }

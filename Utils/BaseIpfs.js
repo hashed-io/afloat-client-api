@@ -3,17 +3,11 @@ const create = require('ipfs-http-client').create
 // import all from 'it-all'
 const all = require('it-all')
 // import { concat as uint8ArrayConcat } from 'uint8arrays/concat'
-const uint8ArrayConcat = require('uint8arrays/concat')
+const uint8ArrayConcat = require('uint8arrays/concat').concat
 // import mime from 'mime-types'
-const { mime } = require('mime-types')
+const mime = require('mime-types')
 class BaseIpfs {
   constructor (projectId, projectSecret, IPFS_URL) {
-    // TODO: How to set up the environment variables
-    // TODO: Packages json
-    // it-all
-    // ipfs-http-client
-    // uint8arrays
-    console.log({ IPFS_URL, projectId, projectSecret })
     const { hostname, port, protocol } = new URL(IPFS_URL || 'https://ipfs.infura.io:5001')
     const auth = 'Basic ' + Buffer.from(projectId + ':' + projectSecret).toString('base64')
     console.log('AUTH', auth)

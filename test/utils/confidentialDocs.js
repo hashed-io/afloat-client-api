@@ -76,7 +76,7 @@ class ConfidentialDocs {
     return this._hcd.address()
   }
 
-  addOwnedData ({ name, description, payload }) {
+  async addOwnedData ({ name, description, payload }) {
     return this._hcd.ownedData().add({
       name,
       description,

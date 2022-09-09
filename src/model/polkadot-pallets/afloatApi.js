@@ -4,7 +4,6 @@ const UniquesApi = require('../polkadot-pallets/uniquesApi')
 const FruniquesApi = require('../polkadot-pallets/fruniquesApi')
 class AfloatApi extends BasePolkadot {
   constructor ({ projectId, secretId, IPFS_URL, notify, hcd }) {
-    console.log('construct', projectId, secretId, IPFS_URL, notify, hcd)
     const polkadotApi = hcd.getPolkadotApi()
     super(polkadotApi, 'fruniques', notify)
     this.hcd = hcd
@@ -37,9 +36,9 @@ class AfloatApi extends BasePolkadot {
    */
   async createAsset ({ collectionId, assetId, uniquesPublicAttributes, plaintextSaveToIPFS, encryptoThenSaveToIPFS }, subTriger) {
     let attributes
-    const collectionID = collectionId || await this.getLastClassId()
+    const collectionID = collectionId || await this.getLastClassId() + 1
     const assetID = assetId || 0
-    console.log({ collectionID, assetID })
+    const numericValue = 0
     const hasProperties = Object.entries(uniquesPublicAttributes).length > 0
     if (hasProperties) {
       attributes = this.getPlainAttributes(uniquesPublicAttributes)
@@ -59,12 +58,12 @@ class AfloatApi extends BasePolkadot {
       attributes.push(...savedEncrypted)
     }
 
-    console.log('Attributes to send', attributes)
+    const admin = await this.hcd.getPolkadotAddress()
     // invoke the extrinsic method
     return this.fruniquesApi.callTx({
       extrinsicName: 'createWithAttributes',
       signer: this._signer,
-      params: attributes
+      params: [collectionID, assetID, numericValue, admin, attributes]
     })
   }
 
@@ -79,9 +78,44 @@ class AfloatApi extends BasePolkadot {
    */
   async getAllAssetsInCollection ({ collectionId, startKey, pageSize }, subTrigger) {
     // Get all assets
-    const assets = await this.uniquesApi.getAllAssets()
-    // Get the
-    return assets
+    const assets = await this.uniquesApi.getAllAssets({ startKey, pageSize })
+    // Get the data from services
+    const publicAttributes = {}
+    const encryptedData = {}
+    const plaintextSaveToIPFS = {}
+    const newAssetFormat = []
+    for (const asset of assets) {
+      const { id, data, attributes } = asset
+      let obj = {
+        assetId: id,
+        data
+      }
+      for (const Attribute of attributes) {
+        let { attribute, value } = Attribute
+        const isIpfs = value.includes(this.prefixIPFS)
+        const isHcd = value.includes(this.prefixHCD)
+        if (isIpfs) {
+          const splitted = value.split(this.prefixIPFS)
+          const cid = await this.BrowserIpfs.retrieve(splitted[1])
+          value = cid
+          plaintextSaveToIPFS[attribute] = value
+        } else if (isHcd) {
+          const splitted = value.split(this.prefixHCD)
+          const cid = await this.hcd.viewOwnedDataByCID(splitted[1])
+          value = cid
+          encryptedData[attribute] = value
+        } else {
+          publicAttributes[attribute] = value
+        }
+      }
+      obj = { ...obj, publicAttributes, plaintextSaveToIPFS, encryptedData }
+      newAssetFormat.push(obj)
+    }
+    return newAssetFormat
+  }
+
+  async getAsset ({ collectionId }) {
+    // const asset = await this.uniquesApi.getAsset({ classId: collectionId, instanceId: 0 })
   }
 
   // Helper functions
@@ -96,7 +130,6 @@ class AfloatApi extends BasePolkadot {
   }
 
   getPlainAttributes (attributes) {
-    console.log(attributes)
     const attributesArray = []
     for (const [key, value] of Object.entries(attributes)) {
       attributesArray.push([key, value.toString()])
@@ -107,7 +140,7 @@ class AfloatApi extends BasePolkadot {
   async saveToIPFS (elements, prefix) {
     try {
       const attributes = []
-      for (const [key, value] of Object.entries(elements)) {
+      for await (const [key, value] of Object.entries(elements)) {
         const cid = await this.BrowserIpfs.store(value)
         const cidWithPrefix = prefix + cid
         attributes.push([key, cidWithPrefix])
@@ -121,11 +154,9 @@ class AfloatApi extends BasePolkadot {
   async saveToHCD (elements, prefix) {
     try {
       const attributes = []
-      console.log({ hcd: this.hcd, elements })
       for await (const [key, value] of Object.entries(elements)) {
         const cid = await this.hcd.addOwnedData({ name: key, description: key, payload: value }).cid
         // const cid = '/HCD/' + value
-        console.log('CID HCD: ', cid)
         const cidWithPrefix = prefix + cid
         attributes.push([key, cidWithPrefix])
       }
