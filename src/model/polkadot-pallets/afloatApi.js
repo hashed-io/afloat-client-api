@@ -7,8 +7,8 @@ class AfloatApi extends BasePolkadot {
     const polkadotApi = hcd.getPolkadotApi()
     super(polkadotApi, 'fruniques', notify)
     this.hcd = hcd
-    this.fruniquesApi = new FruniquesApi({ polkadotApi })
-    this.uniquesApi = new UniquesApi({ polkadotApi })
+    this.fruniquesApi = new FruniquesApi({ polkadotApi, notify })
+    this.uniquesApi = new UniquesApi({ polkadotApi, notify })
 
     this.BrowserIpfs = new BrowserIpfs(projectId, secretId, IPFS_URL)
     this.prefixIPFS = 'IPFS:'

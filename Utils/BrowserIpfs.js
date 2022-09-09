@@ -7,10 +7,10 @@ class BrowserIpfs extends BaseIpfs {
   }
 
   async store (payload) {
-    // if (payload instanceof File) {
-    //   const cid = await this.addFile(payload)
-    //   return this.getTypeCid(cid, payload.type)
-    // }
+    if (payload instanceof File) {
+      const cid = await this.addFile(payload)
+      return this.getTypeCid(cid, payload.type)
+    }
     return super.store(payload)
   }
 
