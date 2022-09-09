@@ -66,26 +66,49 @@ Once an instance of AfloatApi is created, the following methods can be accessed.
 
 **Methods**
 
-* [createAsset](https://github.com/hashed-io/afloat-client-api/blob/feature/afloat/src/model/polkadot-pallets/afloatApi.js#L37): Create a new frunique/NFT asset.
+* [createAsset](https://github.com/hashed-io/afloat-client-api/blob/feature/afloat/src/model/polkadot-pallets/afloatApi.js#L34): Create a new frunique/NFT asset.
 
+  *Params*
     * @param {u64} collectionId Collection ID used in the uniques pallet; represents a group of Uniques
     * @param {u64} assetId [optional] Asset ID used in the uniques pallet; represents a single asset. If not provided, the next available unique ID will be automatically selected.
     * @param {Object} uniquesPublicAttributes mapping of key/value pairs to be set in the public metadata in the uniques pallet
     * @param {Object} plaintextSaveToIPFS payload and/or files to be saved to IPFS, and the resulting CIDs are added to the uniquesPublicMetadata, anchoring the data to the NFT.
     * @param {Object} encryptThenSaveToIPFS payload and/or files to be saved encrypted, saved to IPFS, and the resulting CIDs are added to the uniquesPublicMetadata, anchoring the data to the NFT. [CID]
     * @param {Function} subTrigger Function to trigger when subscrsption detect changes
-```
-await afloatApi.createAsset({
-  collectionId,
-  assetId,
-  uniquesPublicAttributes, plaintextSaveToIPFS, encryptoThenSaveToIPFS,
-  admin
-})
-```
 
-* [getAuthoritiesByMarketplace](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L27): Get authorities by marketplace
-```
-await marketplaceApi.getAuthoritiesByMarketplace({
-  marketId: '0xa54035afb49b42cdacbe27c830dd1b66078069886e80cdd8bab3d139caa0489e'
-})
-```
+    *Example*
+  ```
+  await afloatApi.createAsset({
+    collectionId,
+    assetId,
+    uniquesPublicAttributes, plaintextSaveToIPFS, encryptoThenSaveToIPFS,
+    admin
+  })
+  ```
+
+* [getAllAssetsInCollection](https://github.com/hashed-io/afloat-client-api/blob/feature/afloat/src/model/polkadot-pallets/afloatApi.js#L75): Get all assets in collection.
+
+  *Params*
+   * @param {u64} collectionId Collection ID used in the uniques pallet; represents a group of Uniques
+   * @param {u64} startKey Asset ID, index, or key to start the query
+   * @param {int} pageSize maximum number of assets to retrieve per request
+   * @param {Function} subTrigger Function to trigger when subscription detect changes
+
+    *Example*
+  ```
+  await afloatApi.getAllAssetsInCollection({
+    collectionId,
+    startKey,
+    pageSize
+  })
+  ```
+
+* [getFromIPFS](https://github.com/hashed-io/afloat-client-api/blob/feature/afloat/src/model/polkadot-pallets/afloatApi.js#L113): Get Text or File from IPFS.
+
+  *Params*
+   * @param {String} [cid] Unique IPFS identifier
+
+    *Example*
+  ```
+  await afloatApi.getFromIPFS(cid)
+  ```
