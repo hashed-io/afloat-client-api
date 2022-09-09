@@ -103,6 +103,16 @@ Once an instance of AfloatApi is created, the following methods can be accessed.
   })
   ```
 
+* [getAsset](https://github.com/hashed-io/afloat-client-api/blob/feature/afloat/src/model/polkadot-pallets/afloatApi.js#L107): Get a specific asset by collectionId.
+
+  *Params*
+   * @param {String} [collectionId] Collection Id
+
+    *Example*
+  ```
+  await afloatApi.getAsset({ collectionId })
+  ```
+
 * [getFromIPFS](https://github.com/hashed-io/afloat-client-api/blob/feature/afloat/src/model/polkadot-pallets/afloatApi.js#L113): Get Text or File from IPFS.
 
   *Params*
