@@ -1,7 +1,7 @@
 {
-  "name": "@jmgayosso/afloat-client-api",
+  "name": "@jmgayosso/afloat-client",
   "version": "0.0.1",
-  "description": "Client API that handles calls and queries to interact with NBV pallet",
+  "description": "This client api is used to provide methods to interact with gatedMarketplace, uniques and fruniques pallets and go through Afloat specific flow.",
   "main": "src/index.js",
   "scripts": {
     "test": "DOTENV_CONFIG_PATH=./.env.test jest --setupFiles dotenv/config --watch"
