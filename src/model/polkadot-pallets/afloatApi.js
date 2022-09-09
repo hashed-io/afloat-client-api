@@ -32,7 +32,6 @@ class AfloatApi extends BasePolkadot {
    * @returns {Object}
    */
   async createAsset ({ collectionId, assetId, uniquesPublicAttributes, saveToIPFS, cidFromHCD, admin }, subTriger) {
-    console.log({ collectionId, assetId, uniquesPublicAttributes, saveToIPFS, cidFromHCD, admin })
     let attributes
     const collectionID = collectionId || await this.getLastClassId() + 1
     const assetID = assetId || 0
@@ -41,16 +40,17 @@ class AfloatApi extends BasePolkadot {
     if (hasProperties) {
       attributes = this.getPlainAttributes(uniquesPublicAttributes)
     }
+    if (!attributes) { attributes = [] }
 
     // Save to IPFS
-    const { data: dataToIPFS, files: filesToIPFS } = saveToIPFS
+    const { data: dataToIPFS, files: filesToIPFS } = saveToIPFS || {}
     if (dataToIPFS || filesToIPFS) {
       const savedInIPFS = await this.saveToIPFS({ ...dataToIPFS, ...filesToIPFS }, this.prefixIPFS)
       attributes.push(...savedInIPFS)
     }
 
     // Encrypt save to IPFS
-    const { data: dataToEncrypt, files: filesToEncrypt } = cidFromHCD
+    const { data: dataToEncrypt, files: filesToEncrypt } = cidFromHCD || {}
     if (dataToEncrypt || filesToEncrypt) {
       const savedEncrypted = await this.getPlainAttributes({ ...dataToEncrypt, ...filesToEncrypt })
       attributes.push(...savedEncrypted)
@@ -92,8 +92,8 @@ class AfloatApi extends BasePolkadot {
         const isIpfs = value.includes(this.prefixIPFS)
         if (isIpfs) {
           const splitted = value.split(this.prefixIPFS)
-          const cid = await this.BrowserIpfs.retrieve(splitted[1])
-          value = cid
+          const response = await this.BrowserIpfs.retrieve(splitted[1])
+          value = response
           plaintextSaveToIPFS[attribute] = value
         } else {
           publicAttributes[attribute] = value
@@ -107,16 +107,29 @@ class AfloatApi extends BasePolkadot {
 
   async getAsset ({ collectionId, instanceId = 0 }) {
     // Get the collection object
-    // const asset = await this.uniquesApi.getAsset({ classId: collectionId, instanceId })
-
+    const attributes = await this.uniquesApi.getAsset({ classId: collectionId, instanceId })
+    const jsonExtension = 'json'
     // Get information from the IPFS service
-
+    for (const attribute of attributes) {
+      const { value } = attribute || {}
+      if (value.includes(this.prefixIPFS)) {
+        const splitted = value.split(':')
+        const cid = splitted[1]
+        const extension = splitted[2]
+        console.log({ cid, extension, splitted })
+        if (extension === jsonExtension) {
+          const response = await this.getFromIPFS(cid + ':' + extension)
+          attribute.value = response
+        }
+      }
+    }
+    return attributes
   }
 
   // get only text and file use CID
-  // if extension is json -> texplain
   async getFromIPFS (cid) {
-    const elementRetrieved = await this.BrowserIpfs.store(cid)
+    const elementRetrieved = await this.BrowserIpfs.retrieve(cid)
+    console.log('Get from IPFS', elementRetrieved)
     return elementRetrieved
   }
 

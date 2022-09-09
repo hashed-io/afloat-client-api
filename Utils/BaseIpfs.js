@@ -105,7 +105,7 @@ class BaseIpfs {
    */
   getTypeCid (cid, extensionType) {
     const extension = extensionType.indexOf('/') > -1 ? mime.extension(extensionType) : extensionType
-    return `${cid.path || cid}:${extension}`
+    return `${cid.path}:${extension}`
   }
 
   /**
