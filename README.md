@@ -16,7 +16,7 @@ To install hcd run the following command.
 
 `npm i --save @smontero/hashed-confidential-docs`
 or
-`yarn add --save @smontero/hashed-confidential-docs`
+`yarn add @smontero/hashed-confidential-docs`
 
 The following is an example of basic config to create HCD instance, please see [HCD documentation](https://github.com/hashed-io/hashed-confidential-docs-client-api) to more configs.
 ```
