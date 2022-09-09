@@ -1,127 +1,146 @@
-**Hashed Polkadot API**
+**Afloat Client Api**
 
-This client api is used to interacting with gatedMarketplace pallet, this allows quick connection, queries and calls to TX on this pallet.
+This client api is used to provide methods to interact with gatedMarketplace, uniques and fruniques pallets and go through Afloat specific flow.
 
-To install the hashed polkadot api, run the following command:
+To install the afloat-client-api, run the following command:
 
-`npm i --save @jmgayosso/hashed-polkadot-api`
+`npm i --save @jmgayosso/afloat-client`
 or
-`yarn add --save @jmgayosso/hashed-polkadot-api`
+`yarn add --save @jmgayosso/afloat-client`
 
-To connect to 'hashed chain' we can use an instance of [PolkadotApi](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadotApi.js) that handles the connection and provides methods to sign tx, requestUsers from polkadotJS and sign and verify messages.
+To connect to 'hashed chain' through Hashed Confidential Docs we must import HCD package [hashed-confidential-docs-client](https://github.com/hashed-io/hashed-confidential-docs-client-api) that handles the connection and provides methods to sign tx, login, requestUsers from polkadotJS and sign and verify messages.
+
+**Setup**
+
+To install hcd run the following command.
+
+`npm i --save @smontero/hashed-confidential-docs`
+or
+`yarn add --save @smontero/hashed-confidential-docs`
+
+The following is an example of basic config to create HCD instance, please see [HCD documentation](https://github.com/hashed-io/hashed-confidential-docs-client-api) to more configs.
 ```
-import { PolkadotApi } from '@jmgayosso/hashed-polkadot-api'
+import {
+  HashedConfidentialDocs,
+  Polkadot,
+  LocalAccountFaucet,
+  BalancesApi
+} from '@smontero/hashed-confidential-docs'
+import { Keyring } from '@polkadot/api'
 
-const polkadotApi = new PolkadotApi({
-  chainURI: 'wss://n1.hashed.systems',
-  appName: 'Hashed portal'
+const _polkadot = new Polkadot({ wss: chainURI, appName })
+await _polkadot.connect()
+
+const keyring = new Keyring()
+const faucet = new LocalAccountFaucet({
+  balancesApi: new BalancesApi(this._polkadot._api, () => {}),
+  signer: keyring.addFromUri(this._signer, {}, 'sr25519'),
+  amount: 1000000000
 })
-await polkadotApi.connect()
-```
-
-
-PolkadotApi is requeried to create an instance of [MarketplaceApi](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js), this class provides all methods to interact with gatedMarketplace pallet.
-```
-import { PolkadotApi, MarketplaceApi } from '@jmgayosso/hashed-polkadot-api'
-
-const polkadotApi = new PolkadotApi('wss://n1.hashed.systems')
-await polkadotApi.connect()
-
-const marketplaceApi = new MarketplaceApi(polkadotApi)
-```
-
-Once an instance of MarketplaceApi is created, the following methods can be accessed.
-
-**MarketplaceApi**
-
-* [getMarketplaceById](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L16): Get marketplace's general details by marketplaceId
-```
-await marketplaceApi.getMarketplaceById({
-  marketId: '0xa54035afb49b42cdacbe27c830dd1b66078069886e80cdd8bab3d139caa0489e'
+const _hcd = new HashedConfidentialDocs({
+  ipfsURL: _ipfsURL,
+  polkadot: _polkadot,
+  faucet,
+  ipfsAuthHeader: _ipfsAuthHeader
 })
+
+
 ```
 
-* [getAuthoritiesByMarketplace](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L27): Get authorities by marketplace
-```
-await marketplaceApi.getAuthoritiesByMarketplace({
-  marketId: '0xa54035afb49b42cdacbe27c830dd1b66078069886e80cdd8bab3d139caa0489e'
-})
-```
 
-* [getAllMarketplaces](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L52): Get all marketplaces
-```
-await marketplaceApi.getAllMarketplaces({
-  startKey,
-  pageSize
-})
-```
+HCD is requeried to create an instance of [AfloatApi](https://github.com/hashed-io/afloat-client-api/blob/master/src/model/polkadot-pallets/afloatApi.js), this class provides the following methods: createAssets, getAllAssetsInCollection, getAssets, getFromIpfs.
 
-* [getMyMarketplaces](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L81): Get marketplace's participants by market id
 ```
-await marketplaceApi.getMyMarketplaces({
-   accountId
-})
-```
+import { AfloatApi } from '@jmgayosso/afloat-client'
 
-* [getParticipantsByMarket](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L156): Get marketplace's participants by marketplace
-```
-await marketplaceApi.getParticipantsByMarket({
-  marketId: '0xa54035afb49b42cdacbe27c830dd1b66078069886e80cdd8bab3d139caa0489e'
+const ipfsURL = `Basic ${Buffer.from(`${process.env.IPFS_PROJECT_ID}:${process.env.IPFS_PROJECT_SECRET}`).toString('base64')}`
+
+const afloatApi = new AfloatApi({
+  ipfsURL: process.env.IPFS_URL,
+  ipfsAuthHeader,
+  polkadot: _polkadot
 })
 ```
 
-* [applyFor](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L220): This function calls to 'apply' extrinsic
-```
-await marketplaceApi.applyFor({
-  marketId,
-  user,
-  fields,
-  custodianFields
-})
-```
+Once an instance of AfloatApi is created, the following methods can be accessed.
 
-* [reapplyFor](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L229): This function call reapply extrinsic
-```
-await marketplaceApi.reapplyFor({
-    marketId,
-    user,
-    fields,
-    custodianFields
-})
-```
+**Methods**
 
-* [createMarketplace](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L234): This function call createMarketplace extrinsic
-```
-await marketplaceApi.createMarketplace({
-  admin,
-  user,
-  label
-})
-```
+* [createAsset](https://github.com/hashed-io/afloat-client-api/blob/master/src/model/polkadot-pallets/afloatApi.js#L34): Create a new frunique/NFT asset.
 
-* [enrollApplicant](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L250): This function call enrollApplicant extrinsic
-```
-await marketplaceApi.enrollApplicant({
-  marketId,
-  user,
-  accountOrApplication,
-  approved,
-  feedback
-})
-```
+  *Params*
+    * @param {u64} collectionId Collection ID used in the uniques pallet; represents a group of Uniques
+    * @param {u64} assetId [optional] Asset ID used in the uniques pallet; represents a single asset. If not provided, the next available unique ID will be automatically selected.
+    * @param {Object} uniquesPublicAttributes mapping of key/value pairs to be set in the public metadata in the uniques pallet
+    * @param {Object} saveToIPFS payload and/or files to be saved to IPFS, and the resulting CIDs are added to the uniquesPublicMetadata, anchoring the data to the NFT.
+    * @param {Object} cidFromHCD cidFromHCD cid got from the [ConfidentialDocs API](https://github.com/hashed-io/hashed-confidential-docs-client-api)
+    * @param {Function} subTrigger Function to trigger when subscrsption detect changes
 
-* [getApplicationStatusByAccount](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L262): Get application information by account
-```
-await marketplaceApi.getApplicationStatusByAccount({
-  marketId,
-  account
-})
-```
+    *Example*
+  ```
+  await afloatApi.createAsset({
+    "collectionId": undefined, 
+    "assetId": 0,
+    "uniquesPublicAttributes": {
+        "Lorem ": "Plaintext"
+    },
+    "saveToIPFS": {
+        "data": {
+            "label2": "ipfs plain"
+        },
+        "files": {
+            "label 3": "cid"
+        }
+    },
+    "cidFromHCD": {
+        "data": {
+            "label4": "cid saved on HCD"
+         },
+        "files": {
+            "label5": "cid saved on HCD"
+         }
+    },
+    admin
+  })
+  ```
+  *Notes*
 
-* [getMarketplacesByAuthority](https://github.com/hashed-io/hashed-polkadot-api/blob/master/src/model/polkadot-pallets/marketplaceApi.js#L272): Get marketplaces by authority
-```
-await marketplaceApi.getMarketplacesByAuthority({
-  accountId,
-  marketplaceId
-})
-```
+  To save a file in HCD you must go from [HCD Documentation](https://github.com/hashed-io/hashed-confidential-docs-client-api)
+
+* [getAllAssetsInCollection](https://github.com/hashed-io/afloat-client-api/blob/master/src/model/polkadot-pallets/afloatApi.js#L75): Get all assets in collection.
+
+  *Params*
+   * @param {u64} collectionId Collection ID used in the uniques pallet; represents a group of Uniques
+   * @param {u64} startKey Asset ID, index, or key to start the query
+   * @param {int} pageSize maximum number of assets to retrieve per request
+   * @param {Function} subTrigger Function to trigger when subscription detect changes
+
+    *Example*
+  ```
+  await afloatApi.getAllAssetsInCollection({
+    collectionId,
+    startKey,
+    pageSize
+  })
+  ```
+
+* [getAsset](https://github.com/hashed-io/afloat-client-api/blob/master/src/model/polkadot-pallets/afloatApi.js#L107): Get a specific asset by collectionId.
+
+  *Params*
+   * @param {String} [collectionId] Collection Id
+   * @param {String} [instanceId] Instance Id
+
+    *Example*
+  ```
+  await afloatApi.getAsset({ collectionId, instanceId })
+  ```
+
+* [getFromIPFS](https://github.com/hashed-io/afloat-client-api/blob/master/src/model/polkadot-pallets/afloatApi.js#L113): Get Text or File from IPFS.
+
+  *Params*
+   * @param {String} [cid] Unique IPFS identifier
+
+    *Example*
+  ```
+  await afloatApi.getFromIPFS(cid)
+  ```
