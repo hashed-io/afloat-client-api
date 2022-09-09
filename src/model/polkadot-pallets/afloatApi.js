@@ -30,11 +30,11 @@ class AfloatApi extends BasePolkadot {
    * @param {u64} assetId [optional] Asset ID used in the uniques pallet; represents a single asset. If not provided, the next available unique ID will be automatically selected.
    * @param {Object} uniquesPublicAttributes mapping of key/value pairs to be set in the public metadata in the uniques pallet
    * @param {Object} plaintextSaveToIPFS payload and/or files to be saved to IPFS, and the resulting CIDs are added to the uniquesPublicMetadata, anchoring the data to the NFT.
-   * @param {Object} encryptThenSaveToIPFS payload and/or files to be saved encrypted, saved to IPFS, and the resulting CIDs are added to the uniquesPublicMetadata, anchoring the data to the NFT.
+   * @param {Object} encryptThenSaveToIPFS payload and/or files to be saved encrypted, saved to IPFS, and the resulting CIDs are added to the uniquesPublicMetadata, anchoring the data to the NFT. [CID]
    * @param {Function} subTrigger Function to trigger when subscrsption detect changes
    * @returns {Object}
    */
-  async createAsset ({ collectionId, assetId, uniquesPublicAttributes, plaintextSaveToIPFS, encryptoThenSaveToIPFS }, subTriger) {
+  async createAsset ({ collectionId, assetId, uniquesPublicAttributes, plaintextSaveToIPFS, encryptoThenSaveToIPFS, admin }, subTriger) {
     let attributes
     const collectionID = collectionId || await this.getLastClassId() + 1
     const assetID = assetId || 0
@@ -58,7 +58,6 @@ class AfloatApi extends BasePolkadot {
       attributes.push(...savedEncrypted)
     }
 
-    const admin = await this.hcd.getPolkadotAddress()
     // invoke the extrinsic method
     return this.fruniquesApi.callTx({
       extrinsicName: 'createWithAttributes',
@@ -116,6 +115,12 @@ class AfloatApi extends BasePolkadot {
 
   async getAsset ({ collectionId }) {
     // const asset = await this.uniquesApi.getAsset({ classId: collectionId, instanceId: 0 })
+  }
+
+  // get only text and file use CID
+  // if extension is json -> texplain
+  getFromIPFS (cid) {
+
   }
 
   // Helper functions
