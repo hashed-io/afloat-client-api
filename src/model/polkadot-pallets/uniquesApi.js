@@ -43,6 +43,8 @@ class UniquesApi extends BasePolkadot {
 
   // Queries
   async getAsset ({ classId, instanceId }) {
+    let info = await this.exQuery('class', [classId])
+    info = info.toHuman()
     const allIds = await this.exEntriesQuery('attribute', [classId, instanceId])
     console.log(allIds)
     const map = this.mapEntries(allIds)
@@ -66,7 +68,7 @@ class UniquesApi extends BasePolkadot {
         value: v.value[0]
       }
     })
-    return response
+    return { info, attributes: response }
   }
 
   async getUniquesByAddress ({ address }) {
