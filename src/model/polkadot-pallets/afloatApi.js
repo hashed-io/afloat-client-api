@@ -109,9 +109,15 @@ class AfloatApi extends BasePolkadot {
     return newAssetFormat
   }
 
+  /**
+   *
+   * @param {Number} collectionId The id of the collection of the NFT
+   * @param {Number} instanceId The id of the instance of the NFT
+   * @returns {Object} Object with the data of the NFT [basic information and the attributes]
+   */
   async getAsset ({ collectionId, instanceId = 0 }) {
     // Get the collection object
-    const attributes = await this.uniquesApi.getAsset({ classId: collectionId, instanceId })
+    const { info, attributes } = await this.uniquesApi.getAsset({ classId: collectionId, instanceId })
     const jsonExtension = 'json'
     // Get information from the IPFS service
     for (const attribute of attributes) {
@@ -127,10 +133,9 @@ class AfloatApi extends BasePolkadot {
         }
       }
     }
-    return attributes
+    return { ...info, attributes }
   }
 
-  // get only text and file use CID
   async getFromIPFS (cid) {
     let elementRetrieved
     if (cid) {
