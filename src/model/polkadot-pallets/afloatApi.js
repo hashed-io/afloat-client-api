@@ -28,7 +28,7 @@ class AfloatApi extends BasePolkadot {
    * @param {Array} description Description of the collection
    * @returns {Object}
    */
-  async createCollection ({ description }, subTriger) {
+  async createCollection ({ description }, subTrigger) {
     // invoke the extrinsic method
     return this.fruniquesApi.callTx({
       extrinsicName: 'create_collection',
