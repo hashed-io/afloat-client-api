@@ -41,16 +41,18 @@ class AfloatApi extends BasePolkadot {
    * @name createAsset
    * @description Create a new frunique/NFT asset
    * @param {u64} collectionId Collection ID used in the uniques pallet; represents a group of Uniques
-   * @param {u64} assetId [optional] Asset ID used in the uniques pallet; represents a single asset. If not provided, the next available unique ID will be automatically selected.
    * @param {Object} uniquesPublicAttributes mapping of key/value pairs to be set in the public metadata in the uniques pallet
    * @param {Object} saveToIPFS payload and/or files to be saved to IPFS, and the resulting CIDs are added to the uniquesPublicMetadata, anchoring the data to the NFT.
    * @param {Object} cidFromHCD cid got from the ConfidentialDocs API [https://github.com/hashed-io/hashed-confidential-docs-client-api]
-   * @param {Function} subTrigger Function to trigger when subscrsption detect changes
+   * @param {u64} parentId Asset ID used in the uniques pallet; represents a single asset.
+   * @param {bool} isHierarchical Whether the asset is hierarchical or not
+   * @param {u8} percentage The percentage of the amount it gets from the parent asset
+   * @param {Function} subTrigger Function to trigger when subscription detect changes
    * @returns {Object}
    */
-  async createAsset ({ collectionId, uniquesPublicAttributes, saveToIPFS, cidFromHCD, ParentId, isHierarchical, percentage }, subTriger) {
+  async createAsset ({ collectionId, uniquesPublicAttributes, saveToIPFS, cidFromHCD, parentId, isHierarchical, percentage }, subTrigger) {
     let attributes
-    const parentInfo = isHierarchical ? (ParentId, isHierarchical, percentage) : null
+    const parentInfo = isHierarchical ? (parentId, isHierarchical, percentage) : null
 
     const hasProperties = Object.entries(uniquesPublicAttributes).length > 0
     if (hasProperties) {
