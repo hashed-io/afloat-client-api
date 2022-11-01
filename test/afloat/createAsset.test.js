@@ -5,12 +5,13 @@ const { AfloatApi } = require('../../src/model/polkadot-pallets')
 jest.setTimeout(40000)
 let polkadotApi
 let afloatApi
+
 describe('Connect with hashedChain', () => {
   test('Create PolkadotApi instance', async () => {
     polkadotApi = new PolkadotApi(
       {
-        chainURI: 'wss://n1.hashed.systems',
-        appName: 'Hashed test'
+        chainURI: process.env.WSS,
+        appName: process.env.APP_NAME
       }
     )
     await polkadotApi.connect()
@@ -22,8 +23,4 @@ describe('Connect with hashedChain', () => {
     afloatApi = new AfloatApi(polkadotApi, projectId, secretId)
     expect(afloatApi).toBeDefined()
   })
-})
-
-describe('Create a new Asset', () => {
-
 })

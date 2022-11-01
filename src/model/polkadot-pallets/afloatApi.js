@@ -2,11 +2,13 @@ const BasePolkadot = require('../basePolkadot')
 const BrowserIpfs = require('../../../Utils/BrowserIpfs')
 const UniquesApi = require('../polkadot-pallets/uniquesApi')
 const FruniquesApi = require('../polkadot-pallets/fruniquesApi')
+const GatedMarketplaceApi = require('../polkadot-pallets/gatedMarketplaceApi')
 class AfloatApi extends BasePolkadot {
   constructor ({ polkadotApi, projectId, secretId, IPFS_URL, notify }) {
     super(polkadotApi, 'fruniques', notify)
     this.fruniquesApi = new FruniquesApi({ polkadotApi, notify })
     this.uniquesApi = new UniquesApi({ polkadotApi, notify })
+    this.gatedMarketplaceApi = new GatedMarketplaceApi({ polkadotApi, notify })
 
     this.BrowserIpfs = new BrowserIpfs(projectId, secretId, IPFS_URL)
     this.prefixIPFS = 'IPFS:'
@@ -21,21 +23,37 @@ class AfloatApi extends BasePolkadot {
   }
 
   /**
+   * @name createCollection
+   * @description Create a new collection
+   * @param {Array} description Description of the collection
+   * @returns {Object}
+   */
+  async createCollection ({ description }, subTrigger) {
+    // invoke the extrinsic method
+    return this.fruniquesApi.callTx({
+      extrinsicName: 'create_collection',
+      signer: this._signer,
+      params: [description]
+    })
+  }
+
+  /**
    * @name createAsset
    * @description Create a new frunique/NFT asset
    * @param {u64} collectionId Collection ID used in the uniques pallet; represents a group of Uniques
-   * @param {u64} assetId [optional] Asset ID used in the uniques pallet; represents a single asset. If not provided, the next available unique ID will be automatically selected.
    * @param {Object} uniquesPublicAttributes mapping of key/value pairs to be set in the public metadata in the uniques pallet
    * @param {Object} saveToIPFS payload and/or files to be saved to IPFS, and the resulting CIDs are added to the uniquesPublicMetadata, anchoring the data to the NFT.
    * @param {Object} cidFromHCD cid got from the ConfidentialDocs API [https://github.com/hashed-io/hashed-confidential-docs-client-api]
-   * @param {Function} subTrigger Function to trigger when subscrsption detect changes
+   * @param {u64} parentId Asset ID used in the uniques pallet; represents a single asset.
+   * @param {bool} isHierarchical Whether the asset is hierarchical or not
+   * @param {u8} percentage The percentage of the amount it gets from the parent asset
+   * @param {Function} subTrigger Function to trigger when subscription detect changes
    * @returns {Object}
    */
-  async createAsset ({ collectionId, assetId, uniquesPublicAttributes, saveToIPFS, cidFromHCD, admin }, subTriger) {
+  async createAsset ({ collectionId, uniquesPublicAttributes, saveToIPFS, cidFromHCD, parentId, isHierarchical, percentage }, subTrigger) {
     let attributes
-    const collectionID = collectionId || await this.getLastClassId() + 1
-    const assetID = assetId || 0
-    const numericValue = 0
+    const parentInfo = isHierarchical ? (parentId, isHierarchical, percentage) : null
+
     const hasProperties = Object.entries(uniquesPublicAttributes).length > 0
     if (hasProperties) {
       attributes = this.getPlainAttributes(uniquesPublicAttributes)
@@ -58,9 +76,26 @@ class AfloatApi extends BasePolkadot {
 
     // invoke the extrinsic method
     return this.fruniquesApi.callTx({
-      extrinsicName: 'createWithAttributes',
+      extrinsicName: 'spawn',
       signer: this._signer,
-      params: [collectionID, assetID, numericValue, admin, attributes]
+      params: [collectionId, parentInfo, attributes]
+    })
+  }
+
+  /**
+   * @name enlistOffer
+   * @description Enlist an item in a given marketplace
+   * @param {String} marketplaceId The marketplace id of the item
+   * @param {u64} collectionId Collection ID used in the uniques pallet; represents a group of Uniques
+   * @param {u64} assetId Asset ID used in the uniques pallet; represents a single asset.
+   * @param {u128} price
+   */
+  async enlistOffer ({ marketplaceId, collectionId, assetId, price }) {
+    // invoke the extrinsic method
+    return this.gatedMarketplaceApi.callTx({
+      extrinsicName: 'enlist_sell_offer',
+      signer: this._signer,
+      params: [marketplaceId, collectionId, assetId, price]
     })
   }
 
