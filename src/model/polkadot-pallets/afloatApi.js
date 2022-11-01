@@ -19,6 +19,20 @@ class AfloatApi extends BasePolkadot {
   setSigner (signer) {
     this._signer = signer
   }
+  /**
+   * @name createCollection
+   * @description Create a new collection
+   * @param {Array} description Description of the collection
+   * @returns {Object}
+   */
+  async createCollection ({ description }) {
+    // invoke the extrinsic method
+    return this.fruniquesApi.callTx({
+      extrinsicName: 'create_collection',
+      signer: this._signer,
+      params: [description]
+    })
+  }
 
   /**
    * @name createAsset
@@ -31,7 +45,7 @@ class AfloatApi extends BasePolkadot {
    * @param {Function} subTrigger Function to trigger when subscrsption detect changes
    * @returns {Object}
    */
-  async createAsset ({ collectionId, assetId, uniquesPublicAttributes, saveToIPFS, cidFromHCD, admin }, subTriger) {
+  async createAsset ({ collectionId, uniquesPublicAttributes, saveToIPFS, cidFromHCD }, subTriger) {
     let attributes
     const collectionID = collectionId || await this.getLastClassId() + 1
     const assetID = assetId || 0
@@ -58,9 +72,9 @@ class AfloatApi extends BasePolkadot {
 
     // invoke the extrinsic method
     return this.fruniquesApi.callTx({
-      extrinsicName: 'createWithAttributes',
+      extrinsicName: 'spawn',
       signer: this._signer,
-      params: [collectionID, assetID, numericValue, admin, attributes]
+      params: [assetID, parentInfo, attributes]
     })
   }
 
