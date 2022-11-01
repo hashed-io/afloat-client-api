@@ -2,11 +2,13 @@ const BasePolkadot = require('../basePolkadot')
 const BrowserIpfs = require('../../../Utils/BrowserIpfs')
 const UniquesApi = require('../polkadot-pallets/uniquesApi')
 const FruniquesApi = require('../polkadot-pallets/fruniquesApi')
+const GatedMarketplaceApi = require('../polkadot-pallets/gatedMarketplaceApi')
 class AfloatApi extends BasePolkadot {
   constructor ({ polkadotApi, projectId, secretId, IPFS_URL, notify }) {
     super(polkadotApi, 'fruniques', notify)
     this.fruniquesApi = new FruniquesApi({ polkadotApi, notify })
     this.uniquesApi = new UniquesApi({ polkadotApi, notify })
+    this.gatedMarketplaceApi = new GatedMarketplaceApi({ polkadotApi, notify })
 
     this.BrowserIpfs = new BrowserIpfs(projectId, secretId, IPFS_URL)
     this.prefixIPFS = 'IPFS:'
@@ -19,6 +21,7 @@ class AfloatApi extends BasePolkadot {
   setSigner (signer) {
     this._signer = signer
   }
+
   /**
    * @name createCollection
    * @description Create a new collection
@@ -74,6 +77,23 @@ class AfloatApi extends BasePolkadot {
       extrinsicName: 'spawn',
       signer: this._signer,
       params: [collectionId, parentInfo, attributes]
+    })
+  }
+
+  /**
+   * @name enlistOffer
+   * @description Enlist an item in a given marketplace
+   * @param {String} marketplaceId The marketplace id of the item
+   * @param {u64} collectionId Collection ID used in the uniques pallet; represents a group of Uniques
+   * @param {u64} assetId Asset ID used in the uniques pallet; represents a single asset.
+   * @param {u128} price
+   */
+  async enlistOffer ({ marketplaceId, collectionId, assetId, price }) {
+    // invoke the extrinsic method
+    return this.gatedMarketplaceApi.callTx({
+      extrinsicName: 'enlist_sell_offer',
+      signer: this._signer,
+      params: [marketplaceId, collectionId, assetId, price]
     })
   }
 
