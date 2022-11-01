@@ -25,7 +25,7 @@ class AfloatApi extends BasePolkadot {
    * @param {Array} description Description of the collection
    * @returns {Object}
    */
-  async createCollection ({ description }) {
+  async createCollection ({ description }, subTriger) {
     // invoke the extrinsic method
     return this.fruniquesApi.callTx({
       extrinsicName: 'create_collection',
@@ -45,11 +45,10 @@ class AfloatApi extends BasePolkadot {
    * @param {Function} subTrigger Function to trigger when subscrsption detect changes
    * @returns {Object}
    */
-  async createAsset ({ collectionId, uniquesPublicAttributes, saveToIPFS, cidFromHCD }, subTriger) {
+  async createAsset ({ collectionId, uniquesPublicAttributes, saveToIPFS, cidFromHCD, ParentId, isHierarchical, percentage }, subTriger) {
     let attributes
-    const collectionID = collectionId || await this.getLastClassId() + 1
-    const assetID = assetId || 0
-    const numericValue = 0
+    const parentInfo = isHierarchical ? (ParentId, isHierarchical, percentage) : null
+
     const hasProperties = Object.entries(uniquesPublicAttributes).length > 0
     if (hasProperties) {
       attributes = this.getPlainAttributes(uniquesPublicAttributes)
@@ -74,7 +73,7 @@ class AfloatApi extends BasePolkadot {
     return this.fruniquesApi.callTx({
       extrinsicName: 'spawn',
       signer: this._signer,
-      params: [assetID, parentInfo, attributes]
+      params: [collectionId, parentInfo, attributes]
     })
   }
 
