@@ -31,6 +31,22 @@ class UniquesApi extends BasePolkadot {
     return assetsWithAttributes
   }
 
+  async getInstancesFromCollection ({ collectionId }) {
+    const assets = await this.exEntriesQuery('asset', [collectionId])
+    const assetsMap = this.mapEntries(assets)
+    return assetsMap.map(asset => {
+      const [collection, instance] = asset.id
+      const { owner, isFrozen, approved } = asset.value
+      return {
+        collection,
+        instance,
+        owner,
+        approved,
+        isFrozen
+      }
+    })
+  }
+
   async getLastClassId () {
     let classesIds = await this.exEntriesQuery('class', [])
     classesIds = this.mapEntries(classesIds)
@@ -85,8 +101,18 @@ class UniquesApi extends BasePolkadot {
         ...classData[index]
       }
     })
+    const classMetadata = await this.getMetadaOf({ classIds: classesIdArray })
+    return uniquesList.map((unique, index) => {
+      return {
+        ...classMetadata[index],
+        ...unique
+      }
+    })
+  }
 
-    return uniquesList
+  async getMetadaOf ({ classIds }, subTrigger) {
+    const metadata = await this.exMultiQuery('classMetadataOf', classIds, subTrigger)
+    return metadata.map(v => v.toHuman())
   }
 
   /**
