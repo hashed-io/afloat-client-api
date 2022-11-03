@@ -31,7 +31,7 @@ class AfloatApi extends BasePolkadot {
   async createCollection ({ description }, subTrigger) {
     // invoke the extrinsic method
     return this.fruniquesApi.callTx({
-      extrinsicName: 'create_collection',
+      extrinsicName: 'createCollection',
       signer: this._signer,
       params: [description]
     })
@@ -96,6 +96,68 @@ class AfloatApi extends BasePolkadot {
       extrinsicName: 'enlist_sell_offer',
       signer: this._signer,
       params: [marketplaceId, collectionId, assetId, price]
+    })
+  }
+
+  async createMarketplace ({ admin, label }) {
+    return this.gatedMarketplaceApi.callTx({
+      extrinsicName: 'createMarketplace',
+      signer: this._signer,
+      params: [admin, label]
+    })
+  }
+
+  async getCollections () {
+    const collectionsRaw = await this.uniquesApi.exEntriesQuery('class', [])
+    const collections = this.mapEntries(collectionsRaw)
+
+    const collectionsMap = collections.map(collection => {
+      return {
+        classId: collection.id[0],
+        ...collection.value
+      }
+    })
+
+    // Get the name of the collection
+    const classIds = collectionsMap.map(collection => {
+      return collection.classId
+    })
+
+    const classData = await this.uniquesApi.getMetadaOf({ classIds })
+
+    return collectionsMap.map((collection, i) => {
+      const data = classData[i].data
+      return {
+        ...collection,
+        data
+      }
+    })
+  }
+
+  /**
+   * @name getOffersByCollection
+   * @param {String} collectionId The ID of the collection
+   * @return {}
+   */
+  async getOffersByCollection ({ collectionId }) {
+    const offers = await this.gatedMarketplaceApi.getAllOffersByCollection({ collectionId })
+    return offers.map(offer => {
+      const [collection, instance] = offer.id
+      const [offerId] = offer.value
+      return {
+        collection,
+        instance,
+        offerId
+      }
+    })
+  }
+
+  async enlistSellOffer ({ user, marketplaceId, collectionId, itemId, price }, subTrigger) {
+    return this.gatedMarketplaceApi.callTx({
+      extrinsicName: 'enlistSellOffer',
+      signer: this._signer,
+      params: [marketplaceId, collectionId, itemId, price]
+
     })
   }
 
