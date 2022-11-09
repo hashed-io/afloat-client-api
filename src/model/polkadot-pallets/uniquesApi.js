@@ -31,6 +31,22 @@ class UniquesApi extends BasePolkadot {
     return assetsWithAttributes
   }
 
+  async getInstancesFromCollection ({ collectionId }) {
+    const assets = await this.exEntriesQuery('asset', [collectionId])
+    const assetsMap = this.mapEntries(assets)
+    return assetsMap.map(asset => {
+      const [collection, instance] = asset.id
+      const { owner, isFrozen, approved } = asset.value
+      return {
+        collection,
+        instance,
+        owner,
+        approved,
+        isFrozen
+      }
+    })
+  }
+
   async getLastClassId () {
     let classesIds = await this.exEntriesQuery('class', [])
     classesIds = this.mapEntries(classesIds)
@@ -45,8 +61,9 @@ class UniquesApi extends BasePolkadot {
   async getAsset ({ classId, instanceId }) {
     let info = await this.exQuery('class', [classId])
     info = info.toHuman()
+    let metadata = await this.exQuery('classMetadataOf', [classId])
+    metadata = metadata.toHuman()
     const allIds = await this.exEntriesQuery('attribute', [classId, instanceId])
-    console.log(allIds)
     const map = this.mapEntries(allIds)
     // Example
     //   {
@@ -62,13 +79,12 @@ class UniquesApi extends BasePolkadot {
     //     ]
     // }
     const response = map.map(v => {
-      console.log(v)
       return {
         label: v.id[2],
         value: v.value[0]
       }
     })
-    return { info, attributes: response }
+    return { info, attributes: response, metadata: metadata.data }
   }
 
   async getUniquesByAddress ({ address }) {
@@ -85,8 +101,18 @@ class UniquesApi extends BasePolkadot {
         ...classData[index]
       }
     })
+    const classMetadata = await this.getMetadaOf({ classIds: classesIdArray })
+    return uniquesList.map((unique, index) => {
+      return {
+        ...classMetadata[index],
+        ...unique
+      }
+    })
+  }
 
-    return uniquesList
+  async getMetadaOf ({ classIds }, subTrigger) {
+    const metadata = await this.exMultiQuery('classMetadataOf', classIds, subTrigger)
+    return metadata.map(v => v.toHuman())
   }
 
   /**

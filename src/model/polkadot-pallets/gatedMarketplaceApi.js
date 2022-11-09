@@ -14,8 +14,8 @@ class GatedMarketplaceApi extends BasePolkadot {
    * @param {u64} assetId Asset ID used in the uniques pallet; represents a single asset.
    * @param {u128} price
    */
-  enlist_sell_offer ({ user, marketplaceId, collectionId, itemId, price }, subTrigger) {
-    return this.callTx('create_collection', user, [marketplaceId, collectionId, itemId, price], subTrigger)
+  async enlistSellOffer ({ user, marketplaceId, collectionId, itemId, price }, subTrigger) {
+    return this.callTx('enlistSellOffer', user, [marketplaceId, collectionId, itemId, price], subTrigger)
   }
 
   /**
@@ -23,7 +23,7 @@ class GatedMarketplaceApi extends BasePolkadot {
    * @description Takes the sell offer for a given offer id
    * @param {String} offerId
    */
-  take_sell_offer ({ user, offerId }, subTrigger) {
+  async take_sell_offer ({ user, offerId }, subTrigger) {
     return this.callTx('take_sell_offer', user, [offerId], subTrigger)
   }
 
@@ -32,7 +32,7 @@ class GatedMarketplaceApi extends BasePolkadot {
    * @description Removes the sell offer for a given offer id
    * @param {String} offerId
    */
-  remove_offer ({ user, offerId }, subTrigger) {
+  async remove_offer ({ user, offerId }, subTrigger) {
     return this.callTx('remove_offer', user, [offerId], subTrigger)
   }
 
@@ -44,7 +44,7 @@ class GatedMarketplaceApi extends BasePolkadot {
    * @param {u64} assetId Asset ID used in the uniques pallet; represents a single asset.
    * @param {u128} price
    */
-  enlist_buy_offer ({ user, marketplaceId, collectionId, itemId, price }, subTrigger) {
+  async enlist_buy_offer ({ user, marketplaceId, collectionId, itemId, price }, subTrigger) {
     return this.callTx('enlist_buy_offer', user, [marketplaceId, collectionId, itemId, price], subTrigger)
   }
 
@@ -53,8 +53,29 @@ class GatedMarketplaceApi extends BasePolkadot {
    * @description Takes the buy offer for a given offer id
    * @param {String} offerId
    */
-  take_buy_offer ({ user, offerId }, subTrigger) {
+  async take_buy_offer ({ user, offerId }, subTrigger) {
     return this.callTx('take_buy_offer', user, [offerId], subTrigger)
+  }
+
+  /**
+   * @name getAllOffersByCollection
+   * @param {String} collectionId The id of the collection
+   * @returns {Array}
+   */
+  async getAllOffersByCollection ({ collectionId }) {
+    const offers = await this.exEntriesQuery('offersByItem', [collectionId])
+    return this.mapEntries(offers)
+  }
+
+  /**
+   * @name getAllOffersByCollection
+   * @param {String} collectionId The id of the collection
+   * @param {String} instanceId the id of the instance [NFT]
+   * @returns {Array}
+   */
+  async getOffersByItem ({ collectionId, instanceId }) {
+    const offers = await this.exQuery('offersByItem', [collectionId, instanceId])
+    return offers.map(v => v.toHuman())
   }
 }
 
