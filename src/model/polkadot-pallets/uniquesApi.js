@@ -84,7 +84,7 @@ class UniquesApi extends BasePolkadot {
         value: v.value[0]
       }
     })
-    return { info, attributes: response, metadata: metadata.data }
+    return { info, attributes: response || undefined, metadata: metadata?.data }
   }
 
   async getUniquesByAddress ({ address }) {
