@@ -61,6 +61,9 @@ class UniquesApi extends BasePolkadot {
   async getAsset ({ classId, instanceId }) {
     let info = await this.exQuery('class', [classId])
     info = info.toHuman()
+    let assetInfo = await this.exQuery('asset', [classId, instanceId])
+    assetInfo = assetInfo.toHuman()
+    console.log({ assetInfo, classId, instanceId })
     let metadata = await this.exQuery('classMetadataOf', [classId])
     metadata = metadata.toHuman()
     const allIds = await this.exEntriesQuery('attribute', [classId, instanceId])
@@ -84,7 +87,12 @@ class UniquesApi extends BasePolkadot {
         value: v.value[0]
       }
     })
-    return { info, attributes: response || undefined, metadata: metadata?.data }
+    return { info: assetInfo, collectionInfo: { ...info }, attributes: response || undefined, metadata: metadata?.data }
+  }
+
+  async getAssetInfo ({ collectionId, classId }) {
+    const asset = await this.exQuery('asset', [collectionId, classId])
+    return asset.toHuman()
   }
 
   async getUniquesByAddress ({ address }) {

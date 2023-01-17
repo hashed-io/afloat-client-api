@@ -38,5 +38,26 @@ class FruniquesApi extends BasePolkadot {
   set_attributes ({ user, classId, instanceId, attributes }, subTrigger) {
     return this.callTx('set_attributes', user, [classId, instanceId, attributes], subTrigger)
   }
+
+  async getAllFruniquesInfo ({ collectionId }, subTrigger) {
+    const fruniquesInfo = await this.exEntriesQuery('fruniqueInfo', [collectionId], subTrigger)
+    const fruniquesMap = this.mapEntries(fruniquesInfo)
+    return fruniquesMap.map(frunique => {
+      return {
+        id: frunique.id,
+        ...frunique.value
+      }
+    })
+  }
+
+  async getFruniqueInfoByClass ({ collectionId, classId }, subTrigger) {
+    const fruniquesInfo = await this.exQuery('fruniqueInfo', [collectionId, classId], subTrigger)
+    return fruniquesInfo.toHuman()
+  }
+
+  async isFruniqueVerified ({ collectionId, classId }, subTrigger) {
+    const flag = await this.exQuery('fruniqueVerified', [collectionId, classId], subTrigger)
+    return flag.toHuman()
+  }
 }
 module.exports = FruniquesApi
