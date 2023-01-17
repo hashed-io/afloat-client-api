@@ -77,6 +77,11 @@ class GatedMarketplaceApi extends BasePolkadot {
     const offers = await this.exQuery('offersByItem', [collectionId, instanceId])
     return offers.map(v => v.toHuman())
   }
+
+  async getMarketplaceInfo ({ marketplaceId }) {
+    const marketplace = await this.exQuery('marketplaces', [marketplaceId])
+    return marketplace.toHuman()
+  }
 }
 
 module.exports = GatedMarketplaceApi

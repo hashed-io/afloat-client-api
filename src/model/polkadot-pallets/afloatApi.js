@@ -52,7 +52,7 @@ class AfloatApi extends BasePolkadot {
    */
   async createAsset ({ collectionId, uniquesPublicAttributes, saveToIPFS, cidFromHCD, parentId, isHierarchical, percentage, metadata }, subTrigger) {
     let attributes
-    const parentInfo = isHierarchical ? [parentId, isHierarchical, percentage] : null
+    const parentInfoCall = isHierarchical ? [collectionId, parentId, percentage, isHierarchical] : null
 
     const hasProperties = Object.entries(uniquesPublicAttributes).length > 0
     if (hasProperties) {
@@ -78,7 +78,7 @@ class AfloatApi extends BasePolkadot {
     return this.fruniquesApi.callTx({
       extrinsicName: 'spawn',
       signer: this._signer,
-      params: [collectionId, parentInfo, metadata, attributes]
+      params: [collectionId, metadata, attributes, parentInfoCall]
     })
   }
 
@@ -89,47 +89,53 @@ class AfloatApi extends BasePolkadot {
    */
   async getInstancesFromCollection ({ collectionId }) {
     const assets = await this.uniquesApi.exEntriesQuery('asset', [collectionId])
-    const assetsMap = this.mapEntries(assets)
+    let assetsMap = this.mapEntries(assets)
+
     const assetMetadata = await this.uniquesApi.exEntriesQuery('instanceMetadataOf', [collectionId])
     const metadataMap = this.mapEntries(assetMetadata)
+
     const metadataMapped = metadataMap.map(metadata => {
       const [collection, instance] = metadata.id
+
       return {
         collection,
         instance,
         data: metadata.value.data
       }
     })
-    return assetsMap.map(asset => {
+
+    const promises = []
+    assetsMap.forEach(asset => {
+      const [collection, instance] = asset.id
+      promises.push(this.fruniquesApi.getFruniqueInfoByClass({ collectionId: collection, classId: instance }))
+    })
+
+    const resolved = await Promise.all(promises)
+    assetsMap = assetsMap.map((asset, i) => {
+      return {
+        ...asset,
+        ...resolved[i]
+      }
+    })
+
+    const instanceData = assetsMap.map(asset => {
       const [collection, instance] = asset.id
       const { data } = metadataMapped.find((metadata) => metadata.instance === instance) || {}
-      const { owner, isFrozen, approved } = asset.value
+      const { owner, isFrozen, approved } = asset.value || {}
+      const { weight, parent, children } = asset || {}
       return {
         collection,
         instance,
         owner,
         approved,
         data,
-        isFrozen
+        isFrozen,
+        weight,
+        parent,
+        children
       }
     })
-  }
-
-  /**
-   * @name enlistOffer
-   * @description Enlist an item in a given marketplace
-   * @param {String} marketplaceId The marketplace id of the item
-   * @param {u64} collectionId Collection ID used in the uniques pallet; represents a group of Uniques
-   * @param {u64} assetId Asset ID used in the uniques pallet; represents a single asset.
-   * @param {u128} price
-   */
-  async enlistOffer ({ marketplaceId, collectionId, assetId, price }) {
-    // invoke the extrinsic method
-    return this.gatedMarketplaceApi.callTx({
-      extrinsicName: 'enlistSellOffer',
-      signer: this._signer,
-      params: [marketplaceId, collectionId, assetId, price]
-    })
+    return instanceData
   }
 
   /**
@@ -138,11 +144,11 @@ class AfloatApi extends BasePolkadot {
    * @param {String} admin The polkadot address of the admin
    * @param {String} label The label of the new Marketplace
    */
-  async createMarketplace ({ admin, label }) {
+  async createMarketplace ({ admin, label, fee }) {
     return this.gatedMarketplaceApi.callTx({
       extrinsicName: 'createMarketplace',
       signer: this._signer,
-      params: [admin, label]
+      params: [admin, label, fee]
     })
   }
 
@@ -185,13 +191,27 @@ class AfloatApi extends BasePolkadot {
    */
   async getOffersByCollection ({ collectionId }) {
     const offers = await this.gatedMarketplaceApi.getAllOffersByCollection({ collectionId })
-    return offers.map(offer => {
+    const promises = []
+    const offersFiltered = offers.filter(offer => {
+      const { value } = offer || {}
+      return value?.length > 0
+    })
+    const offersMapped = offersFiltered.map(offer => {
       const [collection, instance] = offer.id
       const [offerId] = offer.value
+      const promise = this.getOfferInfo({ offerId })
+      promises.push(promise)
       return {
         collection,
         instance,
         offerId
+      }
+    })
+    const resolved = await Promise.all(promises)
+    return offersMapped.map((offer, i) => {
+      return {
+        ...offer,
+        offerInfo: resolved[i]
       }
     })
   }
@@ -205,12 +225,28 @@ class AfloatApi extends BasePolkadot {
    * @param {String} itemId The id of the NFT to list on the offers
    * @param {String} price The price of the offer
    */
-  async enlistSellOffer ({ user, marketplaceId, collectionId, itemId, price }, subTrigger) {
+  async enlistSellOffer ({ marketplaceId, collectionId, itemId, price, percentage }, subTrigger) {
     return this.gatedMarketplaceApi.callTx({
       extrinsicName: 'enlistSellOffer',
       signer: this._signer,
-      params: [marketplaceId, collectionId, itemId, price]
+      params: [marketplaceId, collectionId, itemId, price, percentage]
+    })
+  }
 
+  /**
+   * @name enlistSellOffer
+   * @description Create a new buy offer
+   * @param {String} user The signer of the Transaction
+   * @param {String} marketplaceId The marketplace to enlist the new buy offer
+   * @param {String} collectionId The id of the collection where belongs the NFT
+   * @param {String} itemId The id of the NFT to list on the offers
+   * @param {String} price The price of the offer
+   */
+  async enlistBuyOffer ({ marketplaceId, collectionId, itemId, price, percentage }, subTrigger) {
+    return this.gatedMarketplaceApi.callTx({
+      extrinsicName: 'enlistBuyOffer',
+      signer: this._signer,
+      params: [marketplaceId, collectionId, itemId, price, percentage]
     })
   }
 
@@ -224,6 +260,50 @@ class AfloatApi extends BasePolkadot {
       extrinsicName: 'removeOffer',
       signer: this._signer,
       params: [offerId]
+    })
+  }
+
+  /**
+   * @name getOfferInfo
+   * @param {String} OfferId The if of the offer to retrieve
+   * @returns the offer information
+   */
+  async getOfferInfo ({ offerId }) {
+    const offer = await this.gatedMarketplaceApi.exQuery('offersInfo', [offerId])
+    const offerInfo = offer.toHuman()
+    return offerInfo
+  }
+
+  async getOffersByItem ({ collectionId, classId }) {
+    console.log({ collectionId, classId })
+    return this.gatedMarketplaceApi.getOffersByItem({ collectionId, instanceId: classId })
+  }
+
+  async takeSellOffer ({ offerId }) {
+    return this.gatedMarketplaceApi.callTx({
+      extrinsicName: 'takeSellOffer',
+      signer: this._signer,
+      params: [offerId]
+    })
+  }
+
+  async takeBuyOffer ({ offerId }) {
+    return this.gatedMarketplaceApi.callTx({
+      extrinsicName: 'takeBuyOffer',
+      signer: this._signer,
+      params: [offerId]
+    })
+  }
+
+  async getMarketplaceInfo ({ marketplaceId }) {
+    return this.gatedMarketplaceApi.getMarketplaceInfo({ marketplaceId })
+  }
+
+  async inviteToMarketplace ({ marketplaceId, account, fields, custodianFields }) {
+    return this.gatedMarketplaceApi.callTx({
+      extrinsicName: 'invite',
+      signer: this._signer,
+      params: [marketplaceId, account, fields, custodianFields]
     })
   }
 
@@ -280,7 +360,8 @@ class AfloatApi extends BasePolkadot {
    */
   async getAsset ({ collectionId, instanceId = 0 }) {
     // Get the collection object
-    const { info, attributes, metadata } = await this.uniquesApi.getAsset({ classId: collectionId, instanceId })
+    const { info, collectionInfo, attributes, metadata } = await this.uniquesApi.getAsset({ classId: collectionId, instanceId })
+    console.log({ info, attributes, metadata })
     const jsonExtension = 'json'
     // Get information from the IPFS service
     for (const attribute of attributes) {
@@ -295,7 +376,22 @@ class AfloatApi extends BasePolkadot {
         }
       }
     }
-    return { ...info, attributes, metadata }
+    return { ...info, collectionInfo, attributes, metadata }
+  }
+
+  async getAssetInfo ({ collectionId, classId }) {
+    return this.uniquesApi.getAssetInfo({
+      collectionId,
+      classId
+    })
+  }
+
+  async inviteCollaboratorCollection ({ classId, invitee }) {
+    return this.fruniquesApi.callTx({
+      extrinsicName: 'invite',
+      signer: this._signer,
+      params: [classId, invitee]
+    })
   }
 
   async getFromIPFS (cid) {
@@ -304,6 +400,31 @@ class AfloatApi extends BasePolkadot {
       elementRetrieved = await this.BrowserIpfs.retrieve(cid)
     }
     return elementRetrieved
+  }
+
+  async getAllFruniquesInfo ({ collectionId }) {
+    return this.fruniquesApi.getAllFruniquesInfo({ collectionId })
+  }
+
+  async getFruniqueInfoByClass ({ collectionId, classId }) {
+    return this.fruniquesApi.getFruniqueInfoByClass({ collectionId, classId })
+  }
+
+  async getUniqueFruniqueInfo ({ collectionId, classId, withAttributes = false }) {
+    console.log({ collectionId, classId, withAttributes })
+    const unique = withAttributes
+      ? await this.getAsset({ collectionId, instanceId: classId })
+      : await this.getAssetInfo({ collectionId, classId })
+
+    const frunique = await this.getFruniqueInfoByClass({ collectionId, classId })
+    return {
+      ...unique,
+      ...frunique
+    }
+  }
+
+  async isFruniqueVerified ({ collectionId, classId }) {
+    return this.fruniquesApi.isFruniqueVerified({ collectionId, classId })
   }
 
   // Helper functions
