@@ -3,12 +3,14 @@ const BrowserIpfs = require('../../../Utils/BrowserIpfs')
 const UniquesApi = require('../polkadot-pallets/uniquesApi')
 const FruniquesApi = require('../polkadot-pallets/fruniquesApi')
 const GatedMarketplaceApi = require('../polkadot-pallets/gatedMarketplaceApi')
+const RbacApi = require('../polkadot-pallets/rbacApi')
 class AfloatApi extends BasePolkadot {
   constructor ({ polkadotApi, projectId, secretId, IPFS_URL, notify }) {
     super(polkadotApi, 'fruniques', notify)
     this.fruniquesApi = new FruniquesApi({ polkadotApi, notify })
     this.uniquesApi = new UniquesApi({ polkadotApi, notify })
     this.gatedMarketplaceApi = new GatedMarketplaceApi({ polkadotApi, notify })
+    this.rbacApi = new RbacApi({ polkadotApi, notify })
 
     this.BrowserIpfs = new BrowserIpfs(projectId, secretId, IPFS_URL)
     this.prefixIPFS = 'IPFS:'
@@ -136,6 +138,49 @@ class AfloatApi extends BasePolkadot {
       }
     })
     return instanceData
+  }
+
+  async getFruniqueRoots ({ collectionId }) {
+    const responseFrunique = await this.fruniquesApi.exEntriesQuery('fruniqueRoots', [collectionId])
+    const fruniqueRoots = this.mapEntries(responseFrunique)
+    const fruniqueRootsMapped = fruniqueRoots.map(frunique => {
+      const { id } = frunique || {}
+      return id?.[1]
+    })
+    const promisesAssets = []
+    const promisesMetadata = []
+    const promisesFruniques = []
+    fruniqueRootsMapped.forEach((fruniqueId) => {
+      promisesAssets.push(this.uniquesApi.exQuery('asset', [collectionId, fruniqueId]))
+      promisesMetadata.push(this.uniquesApi.exQuery('instanceMetadataOf', [collectionId, fruniqueId]))
+      promisesFruniques.push(this.fruniquesApi.getFruniqueInfoByClass({ collectionId, classId: fruniqueId }))
+    })
+
+    const [
+      responseAssets,
+      responseMetadata,
+      responseFruniques
+    ] = await Promise.all([
+      Promise.all(promisesAssets),
+      Promise.all(promisesMetadata),
+      Promise.all(promisesFruniques)
+    ])
+
+    const data = []
+    responseAssets.forEach((asset, i) => {
+      const instance = fruniqueRoots[i]
+      const assetHuman = asset.toHuman()
+      const metadataHuman = responseMetadata[i].toHuman() || responseMetadata[i]
+      const fruniquesHuman = responseFruniques[i]
+      data.push({
+        collection: collectionId,
+        instance,
+        ...assetHuman,
+        ...metadataHuman,
+        ...fruniquesHuman
+      })
+    })
+    return data
   }
 
   /**
@@ -275,7 +320,6 @@ class AfloatApi extends BasePolkadot {
   }
 
   async getOffersByItem ({ collectionId, classId }) {
-    console.log({ collectionId, classId })
     return this.gatedMarketplaceApi.getOffersByItem({ collectionId, instanceId: classId })
   }
 
@@ -361,7 +405,6 @@ class AfloatApi extends BasePolkadot {
   async getAsset ({ collectionId, instanceId = 0 }) {
     // Get the collection object
     const { info, collectionInfo, attributes, metadata } = await this.uniquesApi.getAsset({ classId: collectionId, instanceId })
-    console.log({ info, attributes, metadata })
     const jsonExtension = 'json'
     // Get information from the IPFS service
     for (const attribute of attributes) {
@@ -425,6 +468,82 @@ class AfloatApi extends BasePolkadot {
 
   async isFruniqueVerified ({ collectionId, classId }) {
     return this.fruniquesApi.isFruniqueVerified({ collectionId, classId })
+  }
+
+  async requestRedeem ({ marketplaceId, redeem }) {
+    console.log('requestRedeem')
+    console.log({ marketplaceId, redeem })
+    // Function to be called when the creator wants to start the IRL process for the Tax credit
+    // Requirements
+    // Only the creator of the Tax credit can start the process for the IRL process
+
+    return this.gatedMarketplaceApi.callTx({
+      extrinsicName: 'redeem',
+      signer: this._signer,
+      params: [marketplaceId, redeem]
+      // params: [marketplaceId, { AskForRedemption: { collectionId: '0', itemId: '0' } }]
+    })
+  }
+
+  /**
+   *
+   */
+  async approveRedeem ({ marketplaceId, redeem }) {
+    console.log('approveRedeem')
+    console.log({ marketplaceId, redeem })
+    // Function to be called when the redeemed of the Tax is finished
+    // Requirements:
+    // Only the admin calls this function when the Process in IRL is finished
+
+    return this.gatedMarketplaceApi.callTx({
+      extrinsicName: 'redeem',
+      signer: this._signer,
+      params: [marketplaceId, redeem]
+    })
+  }
+
+  async askingForRedemption ({ marketplaceId }) {
+    const response = await this.gatedMarketplaceApi.exEntriesQuery('askingForRedemption', [marketplaceId])
+    console.log({ response })
+    const askingForRedemption = this.mapEntries(response)
+    return askingForRedemption?.map(el => {
+      const { value, id } = el || {}
+      const redeemId = id?.[1]
+      return {
+        redeemId,
+        ...value
+      }
+    })
+  }
+
+  async askingForRedemptionByRemptionId ({ marketplaceId, redeemId }) {
+    const response = await this.gatedMarketplaceApi.exQuery('askingForRedemption', [marketplaceId, redeemId])
+    return response.toHuman()
+  }
+
+  /**
+   * @name getAuthoritiesByMarketplace
+   * @description Get authorities by marketplace
+   * @param {String} marketId Marketplace Id
+   * @param {Function} subTrigger Function to trigger when subscription detect changes
+   * @returns {Object}
+   */
+  async getAuthoritiesByMarketplace ({ marketId, palletId }, subTrigger) {
+    const authorities = await this.rbacApi.exEntriesQuery('usersByScope', [palletId, marketId])
+    const mapAuthorities = this.mapEntries(authorities)
+    const rolesIds = mapAuthorities.map(auth => {
+      return auth.id[2]
+    })
+    const roles = await this.rbacApi.exMultiQuery('roles', rolesIds)
+    const rolesHuman = roles.map(role => role.toHuman())
+    const authMap = mapAuthorities.map((m, index) => {
+      return {
+        id: m.id[1],
+        type: rolesHuman[index], // Owner
+        address: m.value[0]
+      }
+    })
+    return authMap
   }
 
   // Helper functions
