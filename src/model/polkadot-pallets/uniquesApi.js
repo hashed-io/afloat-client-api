@@ -63,7 +63,6 @@ class UniquesApi extends BasePolkadot {
     info = info.toHuman()
     let assetInfo = await this.exQuery('asset', [classId, instanceId])
     assetInfo = assetInfo.toHuman()
-    console.log({ assetInfo, classId, instanceId })
     let metadata = await this.exQuery('classMetadataOf', [classId])
     metadata = metadata.toHuman()
     const allIds = await this.exEntriesQuery('attribute', [classId, instanceId])
