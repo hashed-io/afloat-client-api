@@ -454,7 +454,6 @@ class AfloatApi extends BasePolkadot {
   }
 
   async getUniqueFruniqueInfo ({ collectionId, classId, withAttributes = false }) {
-    console.log({ collectionId, classId, withAttributes })
     const unique = withAttributes
       ? await this.getAsset({ collectionId, instanceId: classId })
       : await this.getAssetInfo({ collectionId, classId })
@@ -471,17 +470,10 @@ class AfloatApi extends BasePolkadot {
   }
 
   async requestRedeem ({ marketplaceId, redeem }) {
-    console.log('requestRedeem')
-    console.log({ marketplaceId, redeem })
-    // Function to be called when the creator wants to start the IRL process for the Tax credit
-    // Requirements
-    // Only the creator of the Tax credit can start the process for the IRL process
-
     return this.gatedMarketplaceApi.callTx({
       extrinsicName: 'redeem',
       signer: this._signer,
       params: [marketplaceId, redeem]
-      // params: [marketplaceId, { AskForRedemption: { collectionId: '0', itemId: '0' } }]
     })
   }
 
@@ -489,12 +481,6 @@ class AfloatApi extends BasePolkadot {
    *
    */
   async approveRedeem ({ marketplaceId, redeem }) {
-    console.log('approveRedeem')
-    console.log({ marketplaceId, redeem })
-    // Function to be called when the redeemed of the Tax is finished
-    // Requirements:
-    // Only the admin calls this function when the Process in IRL is finished
-
     return this.gatedMarketplaceApi.callTx({
       extrinsicName: 'redeem',
       signer: this._signer,
@@ -504,7 +490,6 @@ class AfloatApi extends BasePolkadot {
 
   async askingForRedemption ({ marketplaceId }) {
     const response = await this.gatedMarketplaceApi.exEntriesQuery('askingForRedemption', [marketplaceId])
-    console.log({ response })
     const askingForRedemption = this.mapEntries(response)
     return askingForRedemption?.map(el => {
       const { value, id } = el || {}
