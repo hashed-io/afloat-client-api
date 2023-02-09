@@ -488,6 +488,14 @@ class AfloatApi extends BasePolkadot {
     })
   }
 
+  async verifyTax ({ collectionId, instanceId }) {
+    return this.fruniquesApi.callTx({
+      extrinsicName: 'verify',
+      signer: this._signer,
+      params: [collectionId, instanceId]
+    })
+  }
+
   async askingForRedemption ({ marketplaceId }) {
     const response = await this.gatedMarketplaceApi.exEntriesQuery('askingForRedemption', [marketplaceId])
     const askingForRedemption = this.mapEntries(response)
