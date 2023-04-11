@@ -261,6 +261,31 @@ class AfloatApi extends BasePolkadot {
     })
   }
 
+  async getOffersByAccount ({ address }) {
+    const offersIds = await this.gatedMarketplaceApi.exQuery('offersByAccount', [address])
+    const _offersIds = offersIds.map(offer => offer.toHuman())
+
+    const offers = await this.getOffersInfo({ offersIds: _offersIds })
+    return offers.map((offer, i) => {
+      return {
+        ...offer,
+        offerId: _offersIds[i]
+      }
+    })
+  }
+
+  async getOffersByMarketplace ({ marketplaceId }) {
+    let offersIds = await this.gatedMarketplaceApi.exQuery('offersByMarketplace', [marketplaceId])
+    offersIds = offersIds.map(offer => offer.toHuman())
+    const offers = await this.getOffersInfo({ offersIds })
+    return offers.map((offer, i) => {
+      return {
+        ...offer,
+        offerId: offersIds[i]
+      }
+    })
+  }
+
   /**
    * @name enlistSellOffer
    * @description Create a new sell offer
@@ -317,6 +342,11 @@ class AfloatApi extends BasePolkadot {
     const offer = await this.gatedMarketplaceApi.exQuery('offersInfo', [offerId])
     const offerInfo = offer.toHuman()
     return offerInfo
+  }
+
+  async getOffersInfo ({ offersIds }) {
+    const offers = await this.gatedMarketplaceApi.exMultiQuery('offersInfo', offersIds)
+    return offers.map(role => role.toHuman())
   }
 
   async getOffersByItem ({ collectionId, classId }) {
@@ -537,6 +567,16 @@ class AfloatApi extends BasePolkadot {
       }
     })
     return authMap
+  }
+
+  async getUniquesByAccount ({ address, collectionId }) {
+    const uniques = await this.uniquesApi.exEntriesQuery('account', [address, collectionId])
+    const uniquesEntries = this.mapEntries(uniques)
+    return uniquesEntries.map(unique => {
+      const { id } = unique || {}
+      const [owner, collectionId, instanceId] = id || []
+      return { owner, collectionId, instanceId }
+    })
   }
 
   // Helper functions
