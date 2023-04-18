@@ -4,6 +4,7 @@ const UniquesApi = require('../polkadot-pallets/uniquesApi')
 const FruniquesApi = require('../polkadot-pallets/fruniquesApi')
 const GatedMarketplaceApi = require('../polkadot-pallets/gatedMarketplaceApi')
 const RbacApi = require('../polkadot-pallets/rbacApi')
+const AfloatPalletApi = require('../polkadot-pallets/afloatPalletApi')
 class AfloatApi extends BasePolkadot {
   constructor ({ polkadotApi, projectId, secretId, IPFS_URL, notify }) {
     super(polkadotApi, 'fruniques', notify)
@@ -11,6 +12,7 @@ class AfloatApi extends BasePolkadot {
     this.uniquesApi = new UniquesApi({ polkadotApi, notify })
     this.gatedMarketplaceApi = new GatedMarketplaceApi({ polkadotApi, notify })
     this.rbacApi = new RbacApi({ polkadotApi, notify })
+    this.afloatPalletApi = new AfloatPalletApi({ polkadotApi, notify })
 
     this.BrowserIpfs = new BrowserIpfs(projectId, secretId, IPFS_URL)
     this.prefixIPFS = 'IPFS:'
@@ -195,6 +197,10 @@ class AfloatApi extends BasePolkadot {
       signer: this._signer,
       params: [admin, label, fee]
     })
+  }
+
+  async getMarketplaceId () {
+    return this.afloatPalletApi.getAfloatMarketplaceId()
   }
 
   /**
@@ -576,6 +582,38 @@ class AfloatApi extends BasePolkadot {
       const { id } = unique || {}
       const [owner, collectionId, instanceId] = id || []
       return { owner, collectionId, instanceId }
+    })
+  }
+
+  async signUp ({ args }) {
+    return this.afloatPalletApi.callTx({
+      extrinsicName: 'signUp',
+      signer: this._signer,
+      params: [args]
+    })
+  }
+
+  async getUsers () {
+    const users = await this.afloatPalletApi.exEntriesQuery('userInfo', [])
+    const usersEntries = this.mapEntries(users)
+    return usersEntries.map(user => {
+      const { id, value } = user || {}
+      return {
+        id: id?.[0],
+        ...value
+      }
+    })
+  }
+
+  async getUser ({ address }) {
+    const user = await this.afloatPalletApi.exQuery('userInfo', [address])
+    return user.toHuman()
+  }
+
+  async updateUserInfo ({ address, args }) {
+    return this.afloatPalletApi.updateUserInfo({
+      address,
+      args
     })
   }
 
