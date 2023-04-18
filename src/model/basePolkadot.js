@@ -90,7 +90,7 @@ class BasePolkadot {
    */
   async handlerTXResponse (e, resolve, reject, unsub) {
     this.notify({
-      message: 'Waiting for Hashed Chain confirmation',
+      message: 'Waiting for confirmation',
       // background: 'green',
       type: 'listening'
     })
