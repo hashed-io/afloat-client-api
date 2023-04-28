@@ -10,7 +10,7 @@ class AfloatPalletApi extends BasePolkadot {
   }
 
   updateUserInfo ({ address, args }) {
-    return this.afloatPalletApi.callTx({
+    return this.callTx({
       extrinsicName: 'updateUserInfo',
       signer: this._signer,
       params: [address, args]
