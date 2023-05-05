@@ -62,8 +62,8 @@ class GatedMarketplaceApi extends BasePolkadot {
    * @param {String} collectionId The id of the collection
    * @returns {Array}
    */
-  async getAllOffersByCollection ({ collectionId }) {
-    const offers = await this.exEntriesQuery('offersByItem', [collectionId])
+  async getAllOffersByCollection ({ collectionId }, subTrigger) {
+    const offers = await this.exEntriesQuery('offersByItem', [collectionId], subTrigger)
     return this.mapEntries(offers)
   }
 
