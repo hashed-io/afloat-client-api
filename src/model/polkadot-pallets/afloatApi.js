@@ -240,8 +240,8 @@ class AfloatApi extends BasePolkadot {
    * @param {String} collectionId The ID of the collection
    * @return {}
    */
-  async getOffersByCollection ({ collectionId }) {
-    const offers = await this.gatedMarketplaceApi.getAllOffersByCollection({ collectionId })
+  async getOffersByCollection ({ collectionId }, subTrigger) {
+    const offers = await this.gatedMarketplaceApi.getAllOffersByCollection({ collectionId }, subTrigger)
     const promises = []
     const offersFiltered = offers.filter(offer => {
       const { value } = offer || {}
@@ -282,7 +282,7 @@ class AfloatApi extends BasePolkadot {
 
   async getOffersByMarketplace ({ marketplaceId }) {
     let offersIds = await this.gatedMarketplaceApi.exQuery('offersByMarketplace', [marketplaceId])
-    offersIds = offersIds.map(offer => offer.toHuman())
+    offersIds = offersIds?.map(offer => offer.toHuman())
     const offers = await this.getOffersInfo({ offersIds })
     return offers.map((offer, i) => {
       return {
@@ -290,6 +290,10 @@ class AfloatApi extends BasePolkadot {
         offerId: offersIds[i]
       }
     })
+  }
+
+  async subscriptionOffersByMarketplace ({ marketplaceId }, subTrigger) {
+    return this.gatedMarketplaceApi.exQuery('offersByMarketplace', [marketplaceId], subTrigger)
   }
 
   /**
