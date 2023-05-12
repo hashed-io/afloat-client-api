@@ -203,6 +203,10 @@ class AfloatApi extends BasePolkadot {
     return this.afloatPalletApi.getAfloatMarketplaceId()
   }
 
+  async getAfloatCollectionId () {
+    return this.afloatPalletApi.getAfloatCollectionId()
+  }
+
   /**
    * @name getCollections
    * @description Get all the collections of the NFTs wit the name of each collection
@@ -590,6 +594,7 @@ class AfloatApi extends BasePolkadot {
   }
 
   async signUp ({ args }) {
+    console.log({ args })
     return this.afloatPalletApi.callTx({
       extrinsicName: 'signUp',
       signer: this._signer,

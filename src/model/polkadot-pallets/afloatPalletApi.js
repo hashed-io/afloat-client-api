@@ -6,7 +6,11 @@ class AfloatPalletApi extends BasePolkadot {
   }
 
   getAfloatMarketplaceId () {
-    return this.exQuery('afloatMarketplaceId', [])
+    return this.exQuery('afloatMarketPlaceId', [])
+  }
+
+  getAfloatCollectionId () {
+    return this.exQuery('afloatCollectionId', [])
   }
 
   updateUserInfo ({ address, args }) {
