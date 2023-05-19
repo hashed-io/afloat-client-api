@@ -5,6 +5,7 @@ const FruniquesApi = require('../polkadot-pallets/fruniquesApi')
 const GatedMarketplaceApi = require('../polkadot-pallets/gatedMarketplaceApi')
 const RbacApi = require('../polkadot-pallets/rbacApi')
 const AfloatPalletApi = require('../polkadot-pallets/afloatPalletApi')
+const MappedAssetsApi = require('../polkadot-pallets/mappedAssetsApi')
 class AfloatApi extends BasePolkadot {
   constructor ({ polkadotApi, projectId, secretId, IPFS_URL, notify }) {
     super(polkadotApi, 'fruniques', notify)
@@ -13,6 +14,7 @@ class AfloatApi extends BasePolkadot {
     this.gatedMarketplaceApi = new GatedMarketplaceApi({ polkadotApi, notify })
     this.rbacApi = new RbacApi({ polkadotApi, notify })
     this.afloatPalletApi = new AfloatPalletApi({ polkadotApi, notify })
+    this.mappedAssetsApi = new MappedAssetsApi({ polkadotApi, notify })
 
     this.BrowserIpfs = new BrowserIpfs(projectId, secretId, IPFS_URL)
     this.prefixIPFS = 'IPFS:'
@@ -207,6 +209,19 @@ class AfloatApi extends BasePolkadot {
     return this.afloatPalletApi.getAfloatCollectionId()
   }
 
+  async getAfloatAssetId () {
+    return this.afloatPalletApi.exQuery('afloatAssetId', [])
+  }
+
+  async getMappedAssetInfo ({ afloatAssetId }) {
+    const response = await this.mappedAssetsApi.exQuery('asset', [afloatAssetId])
+    return response.toHuman()
+  }
+
+  async getBalanceFromMappedAssets ({ assetId, address }, subTrigger) {
+    return this.mappedAssetsApi.exQuery('account', [assetId, address], subTrigger)
+  }
+
   /**
    * @name getCollections
    * @description Get all the collections of the NFTs wit the name of each collection
@@ -309,11 +324,19 @@ class AfloatApi extends BasePolkadot {
    * @param {String} itemId The id of the NFT to list on the offers
    * @param {String} price The price of the offer
    */
-  async enlistSellOffer ({ marketplaceId, collectionId, itemId, price, percentage }, subTrigger) {
-    return this.gatedMarketplaceApi.callTx({
-      extrinsicName: 'enlistSellOffer',
+  async enlistSellOffer ({ args }, subTrigger) {
+    /**
+     * SELL : {
+     *    taxCreditAmount: '10',
+     *    pricePerCredit: '1000000000000',
+     *    taxCreditId: '0',
+     *    expirationDate: '2026
+     * }
+     */
+    return this.afloatPalletApi.callTx({
+      extrinsicName: 'createOffer',
       signer: this._signer,
-      params: [marketplaceId, collectionId, itemId, price, percentage]
+      params: [args]
     })
   }
 
@@ -566,21 +589,19 @@ class AfloatApi extends BasePolkadot {
    * @returns {Object}
    */
   async getAuthoritiesByMarketplace ({ marketId, palletId }, subTrigger) {
-    const authorities = await this.rbacApi.exEntriesQuery('usersByScope', [palletId, marketId])
-    const mapAuthorities = this.mapEntries(authorities)
-    const rolesIds = mapAuthorities.map(auth => {
-      return auth.id[2]
-    })
-    const roles = await this.rbacApi.exMultiQuery('roles', rolesIds)
-    const rolesHuman = roles.map(role => role.toHuman())
-    const authMap = mapAuthorities.map((m, index) => {
-      return {
-        id: m.id[1],
-        type: rolesHuman[index], // Owner
-        address: m.value[0]
-      }
-    })
-    return authMap
+    // 1. Get the roles ids of the owner and admin
+    const rolesIds = await this.rbacApi.exEntriesQuery('roles', [])
+    const rolesIdsMap = this.mapEntries(rolesIds)
+
+    const roles = ['Admin']
+    const rolesIdsFiltered = rolesIdsMap.filter(role => roles.includes(role?.value))
+
+    const _rolesId = rolesIdsFiltered.map(role => role?.id?.[0])
+
+    const usersByScope = await this.rbacApi.exQuery('usersByScope', [palletId, marketId, _rolesId[0]])
+    const usersByScopeMap = usersByScope.toHuman()
+
+    return usersByScopeMap
   }
 
   async getUniquesByAccount ({ address, collectionId }) {
@@ -594,7 +615,6 @@ class AfloatApi extends BasePolkadot {
   }
 
   async signUp ({ args }) {
-    console.log({ args })
     return this.afloatPalletApi.callTx({
       extrinsicName: 'signUp',
       signer: this._signer,
