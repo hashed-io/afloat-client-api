@@ -287,26 +287,31 @@ class AfloatApi extends BasePolkadot {
   }
 
   async getOffersByAccount ({ address }) {
-    const offersIds = await this.gatedMarketplaceApi.exQuery('offersByAccount', [address])
-    const _offersIds = offersIds.map(offer => offer.toHuman())
+    const afloatOffers = await this.afloatPalletApi.exEntriesQuery('afloatOffers', [])
+    const afloatOffersHuman = this.mapEntries(afloatOffers)
 
-    const offers = await this.getOffersInfo({ offersIds: _offersIds })
-    return offers.map((offer, i) => {
-      return {
-        ...offer,
-        offerId: _offersIds[i]
+    const offersMapped = afloatOffersHuman.reduce((acc, offer) => {
+      const { value, id } = offer || {}
+      const { creatorId } = value || {}
+      if (creatorId === address) {
+        acc.push({
+          id: id?.[0],
+          ...value
+        })
       }
-    })
+      return acc
+    }, [])
+
+    return offersMapped
   }
 
-  async getOffersByMarketplace ({ marketplaceId }) {
-    let offersIds = await this.gatedMarketplaceApi.exQuery('offersByMarketplace', [marketplaceId])
-    offersIds = offersIds?.map(offer => offer.toHuman())
-    const offers = await this.getOffersInfo({ offersIds })
-    return offers.map((offer, i) => {
+  async getOffersByMarketplace () {
+    let offers = await this.afloatPalletApi.exEntriesQuery('afloatOffers', [])
+    offers = this.mapEntries(offers)
+    return offers.map(offer => {
       return {
-        ...offer,
-        offerId: offersIds[i]
+        offerId: offer?.id[0],
+        ...offer?.value
       }
     })
   }
@@ -391,8 +396,8 @@ class AfloatApi extends BasePolkadot {
   }
 
   async takeSellOffer ({ offerId }) {
-    return this.gatedMarketplaceApi.callTx({
-      extrinsicName: 'takeSellOffer',
+    return this.afloatPalletApi.callTx({
+      extrinsicName: 'takeSellOrder',
       signer: this._signer,
       params: [offerId]
     })
