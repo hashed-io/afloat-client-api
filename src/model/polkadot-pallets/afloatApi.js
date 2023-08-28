@@ -589,11 +589,12 @@ class AfloatApi extends BasePolkadot {
   /**
    * @name getAuthoritiesByMarketplace
    * @description Get authorities by marketplace
-   * @param {String} marketId Marketplace Id
+   * @param {String} afloatPalletId Afloat Pallet Id [Used to get the scopes of the Afloat Marketplace]
+   * @param {String} MarketPalletID Market Pallet Id [Used to get the authorities of the Marketplace]
    * @param {Function} subTrigger Function to trigger when subscription detect changes
    * @returns {Object}
    */
-  async getAuthoritiesByMarketplace ({ marketId, palletId }, subTrigger) {
+  async getAuthoritiesByMarketplace ({ afloatPalletId, marketPalletId }, subTrigger) {
     // 1. Get the roles ids of the owner and admin
     const rolesIds = await this.rbacApi.exEntriesQuery('roles', [])
     const rolesIdsMap = this.mapEntries(rolesIds)
@@ -603,7 +604,10 @@ class AfloatApi extends BasePolkadot {
 
     const _rolesId = rolesIdsFiltered.map(role => role?.id?.[0])
 
-    const usersByScope = await this.rbacApi.exQuery('usersByScope', [palletId, marketId, _rolesId[0]])
+    const scopeId = await this.rbacApi.exQuery('scopes', [afloatPalletId])
+    const scopeIdHuman = scopeId.toHuman()
+
+    const usersByScope = await this.rbacApi.exQuery('usersByScope', [marketPalletId, scopeIdHuman[0], _rolesId[0]])
     const usersByScopeMap = usersByScope.toHuman()
 
     return usersByScopeMap
