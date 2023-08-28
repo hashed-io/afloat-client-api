@@ -589,11 +589,11 @@ class AfloatApi extends BasePolkadot {
   /**
    * @name getAuthoritiesByMarketplace
    * @description Get authorities by marketplace
-   * @param {String} marketId Marketplace Id
+   * @param {String} scopeId scope Id
    * @param {Function} subTrigger Function to trigger when subscription detect changes
    * @returns {Object}
    */
-  async getAuthoritiesByMarketplace ({ marketId, palletId }, subTrigger) {
+  async getAuthoritiesByMarketplace ({ afloatPalletId, palletId }, subTrigger) {
     // 1. Get the roles ids of the owner and admin
     const rolesIds = await this.rbacApi.exEntriesQuery('roles', [])
     const rolesIdsMap = this.mapEntries(rolesIds)
@@ -603,7 +603,10 @@ class AfloatApi extends BasePolkadot {
 
     const _rolesId = rolesIdsFiltered.map(role => role?.id?.[0])
 
-    const usersByScope = await this.rbacApi.exQuery('usersByScope', [palletId, marketId, _rolesId[0]])
+    const scopeId = await this.rbacApi.exQuery('scopes', [afloatPalletId])
+    const scopeIdHuman = scopeId.toHuman()
+
+    const usersByScope = await this.rbacApi.exQuery('usersByScope', [palletId, scopeIdHuman[0], _rolesId[0]])
     const usersByScopeMap = usersByScope.toHuman()
 
     return usersByScopeMap
