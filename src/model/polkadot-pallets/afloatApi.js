@@ -589,7 +589,7 @@ class AfloatApi extends BasePolkadot {
   /**
    * @name getAuthoritiesByMarketplace
    * @description Get authorities by marketplace
-   * @param {String} scopeId scope Id
+   * @param {String} afloatPalletId Afloat Pallet Id
    * @param {Function} subTrigger Function to trigger when subscription detect changes
    * @returns {Object}
    */
