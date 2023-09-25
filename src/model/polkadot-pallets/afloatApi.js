@@ -375,6 +375,15 @@ class AfloatApi extends BasePolkadot {
     })
   }
 
+  async cancelOffer ({ offerId }) {
+    console.log('cancel offer')
+    return this.afloatPalletApi.callTx({
+      extrinsicName: 'cancelOffer',
+      signer: this._signer,
+      params: [offerId]
+    })
+  }
+
   /**
    * @name getOfferInfo
    * @param {String} OfferId The if of the offer to retrieve
@@ -395,11 +404,11 @@ class AfloatApi extends BasePolkadot {
     return this.gatedMarketplaceApi.getOffersByItem({ collectionId, instanceId: classId })
   }
 
-  async takeSellOffer ({ offerId }) {
+  async startTakeSellOrder ({ offerId, taxCreditAmount }) {
     return this.afloatPalletApi.callTx({
-      extrinsicName: 'takeSellOrder',
+      extrinsicName: 'startTakeSellOrder',
       signer: this._signer,
-      params: [offerId]
+      params: [offerId, taxCreditAmount]
     })
   }
 
@@ -594,7 +603,7 @@ class AfloatApi extends BasePolkadot {
    * @param {Function} subTrigger Function to trigger when subscription detect changes
    * @returns {Object}
    */
-  async getAuthoritiesByMarketplace ({ afloatPalletId, marketPalletId }, subTrigger) {
+  async getAuthoritiesByMarketplace ({ afloatPalletId, palletId }, subTrigger) {
     // 1. Get the roles ids of the owner and admin
     const rolesIds = await this.rbacApi.exEntriesQuery('roles', [])
     const rolesIdsMap = this.mapEntries(rolesIds)
@@ -607,7 +616,7 @@ class AfloatApi extends BasePolkadot {
     const scopeId = await this.rbacApi.exQuery('scopes', [afloatPalletId])
     const scopeIdHuman = scopeId.toHuman()
 
-    const usersByScope = await this.rbacApi.exQuery('usersByScope', [marketPalletId, scopeIdHuman[0], _rolesId[0]])
+    const usersByScope = await this.rbacApi.exQuery('usersByScope', [palletId, scopeIdHuman[0], _rolesId[0]])
     const usersByScopeMap = usersByScope.toHuman()
 
     return usersByScopeMap
