@@ -384,6 +384,22 @@ class AfloatApi extends BasePolkadot {
     })
   }
 
+  async setAfloatBalance ({ address, amount }) {
+    return this.afloatPalletApi.callTx({
+      extrinsicName: 'setAfloatBalance',
+      signer: this._signer,
+      params: [address, amount]
+    })
+  }
+
+  async addAfloatAdmin ({ address }) {
+    return this.afloatPalletApi.callTx({
+      extrinsicName: 'addAfloatAdmin',
+      signer: this._signer,
+      params: [address]
+    })
+  }
+
   /**
    * @name getOfferInfo
    * @param {String} OfferId The if of the offer to retrieve
