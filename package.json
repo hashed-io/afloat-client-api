@@ -1,6 +1,6 @@
 {
   "name": "@jmgayosso/afloat-client",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "This client api is used to provide methods to interact with gatedMarketplace, uniques and fruniques pallets and go through Afloat specific flow.",
   "main": "src/index.js",
   "scripts": {
