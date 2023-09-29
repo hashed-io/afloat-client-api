@@ -626,13 +626,12 @@ class AfloatApi extends BasePolkadot {
 
     const roles = ['Admin']
     const rolesIdsFiltered = rolesIdsMap.filter(role => roles.includes(role?.value))
-
     const _rolesId = rolesIdsFiltered.map(role => role?.id?.[0])
 
     const scopeId = await this.rbacApi.exQuery('scopes', [afloatPalletId])
     const scopeIdHuman = scopeId.toHuman()
 
-    const usersByScope = await this.rbacApi.exQuery('usersByScope', [palletId, scopeIdHuman[0], _rolesId[0]])
+    const usersByScope = await this.rbacApi.exQuery('usersByScope', [afloatPalletId, scopeIdHuman[0], _rolesId[0]])
     const usersByScopeMap = usersByScope.toHuman()
 
     return usersByScopeMap
